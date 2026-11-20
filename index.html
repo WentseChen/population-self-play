@@ -325,8 +325,8 @@ footer { color: var(--muted); font-size: 0.85rem; padding-top: 24px; border-top:
     <div class="panel">
       <div class="panel-text">
         <span class="tag">Problem 1 · A single policy collapses</span>
-        <h3>Strategies collapse while tokens look more diverse</h3>
-        <p>One might expect a policy trained for longer to pick up all of these strategies by itself. Reinforcement learning works against this: it piles probability onto whichever strategy pays most right now. As one attacker trains, the entropy over the strategies it uses falls to 0.02× its starting value.</p>
+        <h3>An attacker's strategies collapse while its wording looks more diverse</h3>
+        <p>One might expect a policy trained for longer to pick up all of these strategies by itself. Reinforcement learning works against this: it piles probability onto whichever strategy pays most right now. We trained one attacker against a fixed defender. As it trains, the entropy over the attack strategies it uses falls to 0.02× its starting value.</p>
         <p>Token-level entropy, the usual diversity monitor, rises to 1.56× over the same steps. The attacker writes longer, more varied sentences around fewer ideas, so the monitor reports the opposite of what is happening. Training longer does not fix this.</p>
       </div>
       <div class="viz" id="vb">
