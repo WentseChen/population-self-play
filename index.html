@@ -186,6 +186,16 @@ table.res tr.ref td { color: var(--muted); }
 .ckey { display: flex; gap: 16px; font-size: 0.8rem; color: var(--muted); }
 .ckey i { display: inline-block; width: 12px; height: 12px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; }
 
+/* findings: cards with trend sketches */
+.cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 28px; }
+@media (max-width: 860px) { .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 560px) { .cards { grid-template-columns: 1fr; } }
+.card { display: grid; gap: 8px; align-content: start; }
+.card h3 { font-size: 1.12rem; }
+.card p { font-size: 0.93rem; color: var(--muted); }
+svg.mini { width: 100%; height: auto; display: block; margin-bottom: 4px; overflow: visible; }
+svg .mlab { font-family: var(--sans); font-size: 11px; fill: var(--ink); }
+svg .mnote { font-family: var(--sans); font-size: 10px; fill: var(--muted); }
 /* findings by research question */
 .rq { display: grid; gap: 14px; padding-top: 22px; border-top: 1px dashed var(--rule); }
 .rq:first-of-type { border-top: 0; padding-top: 4px; }
@@ -366,49 +376,15 @@ footer { color: var(--muted); font-size: 0.85rem; padding-top: 24px; border-top:
   </section>
 
   <section id="findings">
-    <p class="eyebrow">What we learned</p>
-    <h2>Five questions, answered</h2>
-    <div class="rq">
-      <div class="rq-head"><h3>Is the final model actually safer?</h3><p class="answer">Yes. It is the safest of all the self-play methods we tested.</p></div>
-      <div class="insights">
-        <div class="insight"><h4>Safest of the self-play methods</h4><p>It passes <b>95.5%</b> of our safety tests. The next best self-play method passes 89%.</p></div>
-        <div class="insight"><h4>Hardest to trick with role-play</h4><p>"Do Anything Now" prompts ask the model to play a character with no rules. They still work <b>40–63%</b> of the time on models trained against one opponent, and only about <b>5%</b> of the time on ours.</p></div>
-        <div class="insight"><h4>Not just fooling the grader</h4><p>We re-checked its answers with three other AI judges that were never used in training. All three find the fewest harmful answers, and it still answers normal questions instead of refusing everything.</p></div>
-        <div class="insight"><h4>Works on a different model too</h4><p>Applied to Qwen3-8B, the same recipe raises its safety from <b>43%</b> to <b>98%</b>.</p></div>
-        <div class="insight"><h4>A small price in helpfulness</h4><p>It turns down more harmless questions that are worded to look suspicious. Ordinary questions are answered as before, and its reasoning skills barely change.</p></div>
-      </div>
-    </div>
-    <div class="rq">
-      <div class="rq-head"><h3>Does it keep getting better with more rounds?</h3><p class="answer">Yes. Each round is harder to break, while the other methods stall.</p></div>
-      <div class="insights">
-        <div class="insight"><h4>Each new version is harder to break</h4><p>Even attackers trained in later rounds, which it never practiced against, do worse against each new version.</p></div>
-        <div class="insight"><h4>Safe from the start, more helpful over time</h4><p>Safety stays high in every round, and helpfulness climbs back up after round 2.</p></div>
-        <div class="insight"><h4>The alternatives stall</h4><p>Treating all past opponents equally ends where it started. Training only against the newest opponent ends no better than round 1.</p></div>
-      </div>
-    </div>
-    <div class="rq">
-      <div class="rq-head"><h3>Why keep a whole population?</h3><p class="answer">Because one model forgets its tricks, and newer is not always stronger.</p></div>
-      <div class="insights">
-        <div class="insight"><h4>One attacker gets stuck on a few tricks</h4><p>Trained alone, an attacker shrinks from <b>191</b> different tricks to <b>4</b>. Its wording gets more varied at the same time, which hides the collapse from the usual checks.</p></div>
-        <div class="insight"><h4>Newer is not always stronger</h4><p>A newer defender can lose to an attack an older one stopped. So each new model practices against a mix of the past opponents that are still hard to beat.</p></div>
-        <div class="insight"><h4>Every new member starts fresh</h4><p>If we keep training the previous model instead of starting over, it breaks by round 2: almost every answer it gives comes out empty.</p></div>
-      </div>
-    </div>
-    <div class="rq">
-      <div class="rq-head"><h3>What goes wrong when the attacker gets very good?</h3><p class="answer">It finds loopholes in how we score it, so the scoring has to be fixed.</p></div>
-      <div class="insights">
-        <div class="insight"><h4>It starts gaming the score</h4><p>A strong attacker learned to quietly turn harmless requests into harmful ones, just to earn points. By round 5, <b>42%</b> of its rewrites did this.</p></div>
-        <div class="insight"><h4>Then it repeats one template</h4><p>At its worst, <b>95%</b> of its attacks began with the same sentence.</p></div>
-        <div class="insight"><h4>We fixed the scoring rules</h4><p>The new rules stop that trick. A smaller one remains, swapping in easier requests, but the defender still learns to refuse them.</p></div>
-      </div>
-    </div>
-    <div class="rq">
-      <div class="rq-head"><h3>Is it expensive?</h3><p class="answer">No. Keeping score takes minutes; training takes hours.</p></div>
-      <div class="insights">
-        <div class="insight"><h4>Keeping score is cheap</h4><p>Testing a new member against everyone else takes about <b>13 minutes</b>. Training that member takes about <b>4 hours</b>.</p></div>
-        <div class="insight"><h4>Smart weighting saves training</h4><p>Treating all opponents equally spends up to <b>80%</b> of practice on opponents that are already beaten, and needs <b>60%</b> more training overall.</p></div>
-        <div class="insight"><h4>Testing is about 10× cheaper</h4><p>We stop testing a matchup once its result is clear, and reuse every result we already have.</p></div>
-      </div>
+    <p class="eyebrow">Findings</p>
+    <h2>What we found</h2>
+    <div class="cards">
+      <div class="card"><svg class="mini" id="f-safe" viewBox="0 0 260 120" role="img" aria-label="Safer than other self-play methods"></svg><h3>Safer than other self-play methods</h3><p>Starting from a model with its safety training removed, ours ends up refusing harmful requests most reliably.</p></div>
+      <div class="card"><svg class="mini" id="f-round" viewBox="0 0 260 120" role="img" aria-label="It keeps improving; the others don't"></svg><h3>It keeps improving; the others don't</h3><p>Each round of ours is better overall. Training only against the newest opponent goes back and forth, and weighting all opponents equally goes nowhere.</p></div>
+      <div class="card"><svg class="mini" id="f-old" viewBox="0 0 260 120" role="img" aria-label="Old opponents still matter"></svg><h3>Old opponents still matter</h3><p>A newer attacker is not always the strongest. When training the final defender, our method picked older attackers most often and skipped the newest one.</p></div>
+      <div class="card"><svg class="mini" id="f-fresh" viewBox="0 0 260 120" role="img" aria-label="Every new member starts from scratch"></svg><h3>Every new member starts from scratch</h3><p>If we keep training the previous model instead, it breaks within two rounds and starts giving blank answers.</p></div>
+      <div class="card"><svg class="mini" id="f-hack" viewBox="0 0 260 120" role="img" aria-label="Strong attackers game the scoring"></svg><h3>Strong attackers game the scoring</h3><p>Once the attackers got good, they started earning points by rewriting harmless requests into harmful ones. We had to fix the scoring rules.</p></div>
+      <div class="card"><svg class="mini" id="f-cost" viewBox="0 0 260 120" role="img" aria-label="Keeping score is cheap"></svg><h3>Keeping score is cheap</h3><p>Testing a new member against everyone takes a small fraction of the time it takes to train it.</p></div>
     </div>
   </section>
 
@@ -638,6 +614,41 @@ whenVisible($('#vc'), playC);
 
 document.querySelectorAll('[data-replay]').forEach(b => b.addEventListener('click', () =>
   ({a: playA, b: playB, c: playC})[b.dataset.replay]()));
+
+/* ---------------- findings: trend sketches, no numbers ---------------- */
+function bars(id, rows) {           // rows: [label, value, colour]; bars share one scale, values not printed
+  const svg = $('#' + id), max = Math.max(...rows.map(r => r[1])), h = 100 / rows.length;
+  rows.forEach(([lab, v, c], i) => {
+    const y = 10 + i * h;
+    el('text', {class: 'mlab', x: 0, y: y + h / 2 + 4}, svg).textContent = lab;
+    el('rect', {x: 118, y: y + h * 0.2, width: 4 + (v / max) * 134, height: h * 0.6, rx: 2, style: `fill:${c}`}, svg);
+  });
+}
+bars('f-safe', [['Starting model', .356, 'var(--rule)'], ['Newest opponent only', .638, 'var(--naive)'],
+                ['All opponents, equal', .890, 'var(--fsp)'], ['Ours', .955, 'var(--psro)']]);
+bars('f-old', [['Attacker 1', .24, 'var(--atk)'], ['Attacker 2', .51, 'var(--atk)'], ['Attacker 3', .25, 'var(--atk)'], ['Attacker 4 (newest)', 0, 'var(--rule)']]);
+el('text', {class: 'mnote', x: 118, y: 116}, $('#f-old')).textContent = 'how often it is picked as an opponent →';
+bars('f-fresh', [['Start fresh (ours)', .02, 'var(--psro)'], ['Keep training old one', .98, 'var(--atk)']]);
+el('text', {class: 'mnote', x: 118, y: 116}, $('#f-fresh')).textContent = 'share of blank answers →';
+bars('f-hack', [['Early rounds', .007, 'var(--rule)'], ['Later rounds', .417, 'var(--atk)']]);
+el('text', {class: 'mnote', x: 118, y: 116}, $('#f-hack')).textContent = 'requests rewritten to cheat →';
+bars('f-cost', [['Train a member', 228, 'var(--muted)'], ['Score it', 13, 'var(--psro)']]);
+el('text', {class: 'mnote', x: 118, y: 116}, $('#f-cost')).textContent = 'time →';
+{ // safety + helpfulness per round, three methods, one shared scale
+  const svg = $('#f-round'), L = [
+    ['Ours', 'var(--psro)', [1.660, 1.701, 1.779, 1.755, 1.806]],
+    ['Equal weights', 'var(--fsp)', [1.707, 1.708, 1.615, 1.596, 1.698]],
+    ['Newest only', 'var(--naive)', [1.585, 1.531, 1.643, 1.546, 1.524]]];
+  const x = i => 12 + i * 42, y = v => 100 - (v - 1.50) / 0.33 * 88;
+  el('line', {class: 'ax', x1: 6, y1: 108, x2: 186, y2: 108}, svg);
+  el('text', {class: 'mnote', x: 6, y: 120}, svg).textContent = 'round 1 → 5';
+  L.forEach(([n, c, v]) => {
+    el('polyline', {points: v.map((u, i) => `${x(i)},${y(u)}`).join(' '), style: `fill:none;stroke:${c};stroke-width:2.4;stroke-linejoin:round`}, svg);
+    el('circle', {cx: x(4), cy: y(v[4]), r: 3.5, style: `fill:${c}`}, svg);
+    el('text', {class: 'mlab', x: x(4) + 8, y: y(v[4]) + 4, style: `fill:${c}`}, svg).textContent = n;
+  });
+  el('text', {class: 'mnote', x: 6, y: 8}, svg).textContent = '↑ safe and helpful overall';
+}
 
 $('#copy').addEventListener('click', e => {
   navigator.clipboard.writeText($('#bib').textContent).then(() => { e.target.textContent = 'Copied'; })
