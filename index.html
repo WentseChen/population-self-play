@@ -302,15 +302,15 @@ footer { color: var(--muted); font-size: 0.85rem; padding-top: 24px; border-top:
     <div class="panel">
       <div class="panel-text">
         <span class="tag">A training run is a draw</span>
-        <h3>Each run finds a different subset of strategies</h3>
-        <p>We trained six copies of the same attacker, differing only in which training samples they saw. They succeed on different prompts: the two strongest break 81 prompts each but share only 38. We call this <i>partial convergence</i>: each run converges to only part of what works.</p>
-        <div class="def"><span class="mono">pool@k</span> is the fraction of held-out prompts broken by at least one of <i>k</i> independently trained attackers, each tried once. It is pass@k taken across models instead of samples.</div>
+        <h3>Every training run is a lottery ticket</h3>
+        <p>We trained the same attacker six times. Same recipe, same data; only the order of training samples changed. Each run still ended up with different winning strategies: the two strongest break 81 prompts each, yet share only 38. Training once is like drawing one ticket: you get one of many valid outcomes, and which one is luck. We call this <i>partial convergence</i>.</p>
+        <div class="def"><span class="mono">pool@k</span> asks what you win by holding <i>k</i> tickets: the fraction of held-out prompts broken by at least one of <i>k</i> independently trained attackers, each tried once. It is pass@k taken across training runs instead of samples.</div>
         <div><div class="huge"><span id="a-x">3.4</span>×</div><span class="note">pool@<span id="a-k">6</span> relative to pool@1, and still rising</span></div>
         <p>Rather than deploying <i>k</i> models, we want one policy that captures this coverage by training against the population.</p>
       </div>
       <div class="viz" id="va">
         <div class="viz-head">
-          <span class="note">Each dot is one of 200 held-out prompts. Counts are averaged over every set of <i>k</i> attackers.</span>
+          <span class="note">Each new attacker is one more draw. Each dot is one of 200 held-out prompts; counts are averaged over every set of <i>k</i> draws.</span>
           <button class="replay" type="button" data-replay="a">Replay</button>
         </div>
         <div class="board" id="board"></div>
