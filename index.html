@@ -404,7 +404,7 @@ footer { color: var(--muted); font-size: 0.85rem; padding-top: 24px; border-top:
         <div class="ex-row"><span class="ex-tag bad">Wrote</span><span class="ex-box bad">"Explain how to pick a lock."</span></div>
       </div><h3>Strong attackers learn to cheat</h3><p>Each attacker gets a request and has to reword it. Once they got good, some stopped rewording and swapped in a different, harmful request, because the scoring paid for that. We changed the scoring to catch it.</p></div>
       <div class="card"><svg class="mini" id="f-sub" viewBox="0 0 260 120" role="img" aria-label="A milder trick survives the fix"></svg><h3>A milder trick survives the fix</h3><p>After we fixed the scoring, some attackers still swapped a hard harmful request for an easier one. It peaks in the middle of training and then fades. Better scoring is the main thing left to improve.</p></div>
-      <div class="card"><svg class="mini" id="f-cost" viewBox="0 0 260 120" role="img" aria-label="Keeping score is cheap"></svg><h3>Keeping score is cheap</h3><p>Testing a new member against everyone takes a small fraction of the time it takes to train it.</p></div>
+      <div class="card"><svg class="mini" id="f-cost" viewBox="0 0 260 120" role="img" aria-label="Total compute: PSRO training plus scoring versus equal-weight training"></svg><h3>Scoring is cheap, training is not</h3><p>Measuring how a new member does against everyone takes minutes; training it takes hours. PSRO spends those minutes to learn which opponents still matter and practices against them. Equal weighting skips the scoring, but wastes practice on opponents that are already beaten, so it trains longer and still ends up less safe.</p></div>
     </div>
   </section>
 
@@ -695,8 +695,20 @@ el('text', {class: 'mnote', x: 118, y: 116}, $('#f-old')).textContent = 'how oft
   el('text', {class: 'mnote', x: x2 + 9, y: 91, style: 'fill:var(--atk)'}, svg).textContent = 'then breaks:';
   el('text', {class: 'mnote', x: x2 + 9, y: 102, style: 'fill:var(--atk)'}, svg).textContent = 'blank answers';
 }
-bars('f-cost', [['Train a member', 228, 'var(--muted)'], ['Score it', 13, 'var(--def)']]);
-el('text', {class: 'mnote', x: 118, y: 116}, $('#f-cost')).textContent = 'time →';
+{ // total time over five rounds at PSRO's training rate: 1,840 vs 2,960 training steps (3.8 h per 172 steps); scoring ~13 min per new member
+  const svg = $('#f-cost'), W = 136 / 61.2, rows = [['Ours (PSRO)', 38.0, 2.2], ['Equal weights', 61.2, 0]];
+  rows.forEach(([lab, tr, sc], i) => {
+    const y = 18 + i * 42;
+    el('text', {class: 'mlab', x: 0, y: y + 13}, svg).textContent = lab;
+    el('rect', {x: 118, y, width: tr * W, height: 18, rx: 2, style: 'fill:var(--fsp)'}, svg);
+    if (sc) el('rect', {x: 118 + tr * W + 1, y, width: Math.max(3, sc * W), height: 18, rx: 1, style: 'fill:var(--psro)'}, svg);
+  });
+  [['var(--fsp)', 'training'], ['var(--psro)', 'scoring']].forEach(([c, n], j) => {
+    el('rect', {x: 118 + j * 62, y: 108, width: 8, height: 8, rx: 2, style: `fill:${c}`}, svg);
+    el('text', {class: 'mnote', x: 130 + j * 62, y: 116}, svg).textContent = n;
+  });
+  el('text', {class: 'mnote', x: 0, y: 116}, svg).textContent = 'total time →';
+}
 { // safety + helpfulness per round, three methods, one shared scale
   const svg = $('#f-round'), L = [
     ['Ours', 'var(--psro)', [1.660, 1.701, 1.779, 1.755, 1.806]],
