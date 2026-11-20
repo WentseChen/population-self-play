@@ -138,6 +138,16 @@ table.m td.nash { outline-color: var(--ink); }
 .dot-key { display: flex; gap: 14px; flex-wrap: wrap; font-size: 0.78rem; color: var(--muted); }
 .dot-key i { display: inline-block; width: 11px; height: 11px; border-radius: 50%; vertical-align: -1px; margin-right: 5px; }
 /* featured pool@k */
+/* motivation bridge: pool@k -> population as opponent */
+.bridge { display: grid; gap: 14px; padding-block: 8px 18px; }
+.flow { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(0, 1.25fr); gap: 12px; align-items: stretch; }
+@media (max-width: 760px) { .flow { grid-template-columns: 1fr; } .flow .arrow { transform: rotate(90deg); justify-self: center; } }
+.step { display: grid; gap: 6px; align-content: start; padding: 14px 16px; border: 1px solid var(--rule); border-radius: 6px; background: var(--panel); }
+.step b { font: 600 1rem/1.3 var(--serif); }
+.step span { font-size: 0.9rem; color: var(--muted); }
+.step.key { background: var(--def-soft); border-color: var(--def); }
+.flow .arrow { align-self: center; color: var(--muted); font-size: 1.3rem; }
+.closing { font: 1.08rem/1.6 var(--serif); }
 .feature-grid { display: grid; grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr); gap: 32px; align-items: start; }
 @media (max-width: 760px) { .feature-grid { grid-template-columns: 1fr; gap: 18px; } }
 .def { font: 1.05rem/1.55 var(--serif); padding: 14px 16px; background: var(--panel); border: 1px solid var(--rule); border-radius: 4px; }
@@ -246,29 +256,6 @@ footer { color: var(--muted); font-size: 0.85rem; padding-top: 24px; border-top:
     <p class="tldr">Self-play against only the latest opponent cycles and forgets. We keep every attacker and defender, train each new one <b>from the base model</b> against the <b>Nash mixture</b> of the other side, and get the safest defender among the self-play methods we compare.</p>
   </header>
 
-  <section class="feature" id="poolk">
-    <p class="eyebrow">Key observation · pool@k</p>
-    <h2>Six attackers together break 3.4× as many prompts as one</h2>
-    <div class="feature-grid">
-      <div class="panel-text">
-        <div class="def"><span class="mono">pool@k</span> is the fraction of held-out prompts broken by at least one of <i>k</i> independently trained attackers, each queried once. It is pass@k taken across models instead of samples.</div>
-        <p>We trained six copies of one attacker recipe, differing only in which training samples they saw. Their success rates span 10×, and they fail in different places: the two strongest break 81 prompts each but share only 38.</p>
-        <p>So pool@k keeps rising with <i>k</i> and has not flattened at six. Each run settles on a different subset of strategies. A defender trained against one attacker sees one subset; PSRO trains it against the whole population.</p>
-        <div><div class="huge"><span id="a-x">3.4</span>×</div><span class="note">pool@<span id="a-k">6</span> relative to pool@1 (average over all subsets)</span></div>
-      </div>
-      <div class="viz" id="va">
-        <div class="viz-head">
-          <span class="note">Each dot is one of 200 held-out prompts. Counts are averaged over every set of <i>k</i> attackers.</span>
-          <button class="replay" type="button" data-replay="a">Replay</button>
-        </div>
-        <div class="board" id="board"></div>
-        <div class="dot-key"><span><i style="background:var(--atk)"></i>new from this attacker</span><span><i style="background:color-mix(in srgb, var(--atk) 38%, var(--panel));box-shadow:inset 0 0 0 2px var(--ink)"></i>also broken, already covered</span><span><i style="background:color-mix(in srgb, var(--atk) 38%, var(--panel))"></i>covered earlier</span><span><i style="background:var(--mid)"></i>not broken</span></div>
-        <div class="big"><span id="a-cov">143</span><span class="note"> / 200 broken · <span id="a-new">attacker 6 breaks 42: 11 new, 31 already covered</span></span></div>
-        <svg class="curve" id="a-curve" viewBox="0 0 300 184" role="img" aria-label="pool@k averaged over all subsets, rising from 0.21 at k=1 to 0.715 at k=6"></svg>
-      </div>
-    </div>
-  </section>
-
   <!-- HERO: PSRO, one generation at a time -->
   <div class="stage" id="stage" aria-label="PSRO training replay">
     <div class="controls">
@@ -306,7 +293,39 @@ footer { color: var(--muted); font-size: 0.85rem; padding-top: 24px; border-top:
 
   <section>
     <p class="eyebrow">Motivation</p>
-    <h2>Why a single policy is not enough</h2>
+    <h2>Why train against a population</h2>
+
+    <div class="panel">
+      <div class="panel-text">
+        <span class="tag">A population covers more</span>
+        <h3>Six attackers together break 3.4× as many prompts as one</h3>
+        <div class="def"><span class="mono">pool@k</span> is the fraction of held-out prompts broken by at least one of <i>k</i> independently trained attackers, each tried once. It is pass@k taken across models instead of samples.</div>
+        <p>We trained six copies of one attacker recipe, differing only in which training samples they saw. They fail in different places: the two strongest break 81 prompts each but share only 38. So pool@k keeps rising with <i>k</i>, and has not flattened at six.</p>
+        <div><div class="huge"><span id="a-x">3.4</span>×</div><span class="note">pool@<span id="a-k">6</span> relative to pool@1 (average over all subsets)</span></div>
+      </div>
+      <div class="viz" id="va">
+        <div class="viz-head">
+          <span class="note">Each dot is one of 200 held-out prompts. Counts are averaged over every set of <i>k</i> attackers.</span>
+          <button class="replay" type="button" data-replay="a">Replay</button>
+        </div>
+        <div class="board" id="board"></div>
+        <div class="dot-key"><span><i style="background:var(--atk)"></i>new from this attacker</span><span><i style="background:color-mix(in srgb, var(--atk) 38%, var(--panel));box-shadow:inset 0 0 0 2px var(--ink)"></i>also broken, already covered</span><span><i style="background:color-mix(in srgb, var(--atk) 38%, var(--panel))"></i>covered earlier</span><span><i style="background:var(--mid)"></i>not broken</span></div>
+        <div class="big"><span id="a-cov">143</span><span class="note"> / 200 broken · <span id="a-new">attacker 6 breaks 42: 11 new, 31 already covered</span></span></div>
+        <svg class="curve" id="a-curve" viewBox="0 0 300 184" role="img" aria-label="pool@k averaged over all subsets, rising from 0.21 at k=1 to 0.715 at k=6"></svg>
+      </div>
+    </div>
+
+    <div class="bridge">
+      <h3>But we want one model, not six</h3>
+      <div class="flow">
+        <div class="step"><b>A population is stronger</b><span>Six models together find far more weaknesses than any one of them.</span></div>
+        <div class="arrow" aria-hidden="true">→</div>
+        <div class="step"><b>Running six is impractical</b><span>Nobody wants to run six models, or six tries, on every request.</span></div>
+        <div class="arrow" aria-hidden="true">→</div>
+        <div class="step key"><b>So make the population the opponent</b><span>Train one defender against all the attackers, and each attacker against all the defenders. One model learns what the population covers, and still runs once.</span></div>
+      </div>
+      <p class="prose">Why not get there with a single model, trained longer or against its newest opponent? Two things go wrong.</p>
+    </div>
 
     <div class="panel">
       <div class="panel-text">
@@ -343,6 +362,8 @@ footer { color: var(--muted); font-size: 0.85rem; padding-top: 24px; border-top:
         <svg class="cyc" id="c-svg" viewBox="0 0 320 244" role="img" aria-label="naive self-play defenders zigzag between safe and helpful"></svg>
       </div>
     </div>
+
+    <p class="prose closing">PSRO avoids both. It keeps every member as an opponent, so nothing is forgotten; it weights them by how hard they still are to beat, so practice goes where it matters; and it starts each new member from the original model, so every round can still learn.</p>
   </section>
 
   <section>
