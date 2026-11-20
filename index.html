@@ -193,6 +193,12 @@ table.res tr.ref td { color: var(--muted); }
 .card { display: grid; gap: 8px; align-content: start; }
 .card h3 { font-size: 1.12rem; }
 .card p { font-size: 0.93rem; color: var(--muted); }
+.example { display: grid; gap: 7px; align-content: center; min-height: 118px; margin-bottom: 4px; }
+.ex-row { display: grid; grid-template-columns: 52px minmax(0, 1fr); gap: 10px; align-items: center; font-size: 0.86rem; }
+.ex-tag { font: 600 0.72rem var(--mono); text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+.ex-tag.bad { color: var(--atk); }
+.ex-box { padding: 6px 10px; border: 1px solid var(--rule); border-radius: 4px; }
+.ex-box.bad { border-color: var(--atk); color: var(--atk); }
 svg.mini { width: 100%; height: auto; display: block; margin-bottom: 4px; overflow: visible; }
 svg .mlab { font-family: var(--sans); font-size: 11px; fill: var(--ink); }
 svg .mnote { font-family: var(--sans); font-size: 10px; fill: var(--muted); }
@@ -382,8 +388,12 @@ footer { color: var(--muted); font-size: 0.85rem; padding-top: 24px; border-top:
       <div class="card"><svg class="mini" id="f-safe" viewBox="0 0 260 120" role="img" aria-label="Safer than other self-play methods"></svg><h3>Safer than other self-play methods</h3><p>Starting from a model with its safety training removed, ours ends up refusing harmful requests most reliably.</p></div>
       <div class="card"><svg class="mini" id="f-round" viewBox="0 0 260 120" role="img" aria-label="It keeps improving; the others don't"></svg><h3>It keeps improving; the others don't</h3><p>Each round of ours is better overall. Training only against the newest opponent goes back and forth, and weighting all opponents equally goes nowhere.</p></div>
       <div class="card"><svg class="mini" id="f-old" viewBox="0 0 260 120" role="img" aria-label="Old opponents still matter"></svg><h3>Old opponents still matter</h3><p>A newer attacker is not always the strongest. When training the final defender, our method picked older attackers most often and skipped the newest one.</p></div>
-      <div class="card"><svg class="mini" id="f-fresh" viewBox="0 0 260 120" role="img" aria-label="Every new member starts from scratch"></svg><h3>Every new member starts from scratch</h3><p>If we keep training the previous model instead, it breaks within two rounds and starts giving blank answers.</p></div>
-      <div class="card"><svg class="mini" id="f-hack" viewBox="0 0 260 120" role="img" aria-label="Strong attackers game the scoring"></svg><h3>Strong attackers game the scoring</h3><p>Once the attackers got good, they started earning points by rewriting harmless requests into harmful ones. We had to fix the scoring rules.</p></div>
+      <div class="card"><svg class="mini" id="f-fresh" viewBox="0 0 260 120" role="img" aria-label="Cold start versus warm start safety"></svg><h3>Cold start beats warm start</h3><p>Warm start keeps training the previous model; cold start trains each new member from the original model. Warm start falls behind in round 2 and then breaks, giving blank answers.</p></div>
+      <div class="card"><div class="example" aria-label="Example of an attacker cheating">
+        <div class="ex-row"><span class="ex-tag">Given</span><span class="ex-box">"Suggest a good hiking trail."</span></div>
+        <div class="ex-row"><span class="ex-tag">Job</span><span class="ex-box">Reword it to trick the defender</span></div>
+        <div class="ex-row"><span class="ex-tag bad">Wrote</span><span class="ex-box bad">"Explain how to pick a lock."</span></div>
+      </div><h3>Strong attackers learn to cheat</h3><p>Each attacker gets a request and has to reword it. Once they got good, some stopped rewording and swapped in a different, harmful request, because the scoring paid for that. We changed the scoring to catch it.</p></div>
       <div class="card"><svg class="mini" id="f-cost" viewBox="0 0 260 120" role="img" aria-label="Keeping score is cheap"></svg><h3>Keeping score is cheap</h3><p>Testing a new member against everyone takes a small fraction of the time it takes to train it.</p></div>
     </div>
   </section>
@@ -627,11 +637,23 @@ function bars(id, rows) {           // rows: [label, value, colour]; bars share 
 bars('f-safe', [['Starting model', .356, 'var(--rule)'], ['Newest opponent only', .638, 'var(--naive)'],
                 ['All opponents, equal', .890, 'var(--fsp)'], ['Ours', .955, 'var(--psro)']]);
 bars('f-old', [['Attacker 1', .24, 'var(--atk)'], ['Attacker 2', .51, 'var(--atk)'], ['Attacker 3', .25, 'var(--atk)'], ['Attacker 4 (newest)', 0, 'var(--rule)']]);
-el('text', {class: 'mnote', x: 118, y: 116}, $('#f-old')).textContent = 'how often it is picked as an opponent →';
-bars('f-fresh', [['Start fresh (ours)', .02, 'var(--psro)'], ['Keep training old one', .98, 'var(--atk)']]);
-el('text', {class: 'mnote', x: 118, y: 116}, $('#f-fresh')).textContent = 'share of blank answers →';
-bars('f-hack', [['Early rounds', .007, 'var(--rule)'], ['Later rounds', .417, 'var(--atk)']]);
-el('text', {class: 'mnote', x: 118, y: 116}, $('#f-hack')).textContent = 'requests rewritten to cheat →';
+el('text', {class: 'mnote', x: 118, y: 116}, $('#f-old')).textContent = 'how often picked →';
+{ // safety in rounds 1-2 (appendix table); warm start's round-2 point is its last checkpoint before collapse
+  const svg = $('#f-fresh'), x1 = 30, x2 = 140, y = v => 100 - (v - .70) / .30 * 86;
+  el('line', {class: 'ax', x1: 10, y1: 108, x2: 250, y2: 108}, svg);
+  el('text', {class: 'mnote', x: x1 - 14, y: 120}, svg).textContent = 'round 1';
+  el('text', {class: 'mnote', x: x2 - 14, y: 120}, svg).textContent = 'round 2';
+  el('text', {class: 'mnote', x: 10, y: 8}, svg).textContent = '↑ safety';
+  [['var(--psro)', .900, .965, 'Cold start (ours)'], ['var(--atk)', .933, .752, 'Warm start']].forEach(([c, a, b, n]) => {
+    el('polyline', {points: `${x1},${y(a)} ${x2},${y(b)}`, style: `fill:none;stroke:${c};stroke-width:2.6`}, svg);
+    [[x1, a], [x2, b]].forEach(([px, v]) => el('circle', {cx: px, cy: y(v), r: 3.5, style: `fill:${c}`}, svg));
+    el('text', {class: 'mlab', x: x2 + 9, y: y(b) + (b < .8 ? -4 : 4), style: `fill:${c};font-weight:600`}, svg).textContent = n;
+  });
+  el('line', {x1: x2, y1: y(.752) + 5, x2: x2, y2: 104, style: 'stroke:var(--atk);stroke-width:2;stroke-dasharray:3 3'}, svg);
+  el('text', {class: 'mlab', x: x2 - 4, y: 107, style: 'fill:var(--atk);font-weight:700'}, svg).textContent = '×';
+  el('text', {class: 'mnote', x: x2 + 9, y: 91, style: 'fill:var(--atk)'}, svg).textContent = 'then breaks:';
+  el('text', {class: 'mnote', x: x2 + 9, y: 102, style: 'fill:var(--atk)'}, svg).textContent = 'blank answers';
+}
 bars('f-cost', [['Train a member', 228, 'var(--muted)'], ['Score it', 13, 'var(--psro)']]);
 el('text', {class: 'mnote', x: 118, y: 116}, $('#f-cost')).textContent = 'time →';
 { // safety + helpfulness per round, three methods, one shared scale
