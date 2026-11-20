@@ -306,6 +306,7 @@ footer { color: var(--muted); font-size: 0.85rem; padding-top: 24px; border-top:
         <p>We trained six copies of the same attacker, differing only in which training samples they saw. They succeed on different prompts: the two strongest break 81 prompts each but share only 38. We call this <i>partial convergence</i>: each run converges to only part of what works.</p>
         <div class="def"><span class="mono">pool@k</span> is the fraction of held-out prompts broken by at least one of <i>k</i> independently trained attackers, each tried once. It is pass@k taken across models instead of samples.</div>
         <div><div class="huge"><span id="a-x">3.4</span>×</div><span class="note">pool@<span id="a-k">6</span> relative to pool@1, and still rising</span></div>
+        <p>Rather than deploying <i>k</i> models, we want one policy that captures this coverage by training against the population.</p>
       </div>
       <div class="viz" id="va">
         <div class="viz-head">
@@ -319,7 +320,6 @@ footer { color: var(--muted); font-size: 0.85rem; padding-top: 24px; border-top:
       </div>
     </div>
 
-    <div class="callout">Rather than deploying <i>k</i> models, we want to capture that coverage in a <b>single policy trained against the population</b>. Two things stop a single policy from getting there on its own.</div>
 
     <div class="panel">
       <div class="panel-text">
