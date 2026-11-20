@@ -85,7 +85,8 @@ header { display: grid; gap: 18px; padding-bottom: 32px; }
 .score { display: grid; gap: 0; }
 .score b { font: 600 2.1rem/1.1 var(--mono); font-variant-numeric: tabular-nums; }
 .score span { font-size: 0.8rem; color: var(--muted); }
-.delta { font: 500 0.8rem var(--mono); min-height: 1.3em; }
+.delta { font: 500 0.8rem var(--mono); min-height: 1.3em; white-space: nowrap; }
+#stage .hide { visibility: hidden; }
 .delta.up { color: var(--up) !important; } .delta.down { color: var(--down) !important; }
 svg.trade { width: 100%; height: auto; display: block; }
 svg text { font-family: var(--mono); font-size: 9px; fill: var(--muted); }
@@ -499,19 +500,20 @@ function setDelta(node, d, k) {
 function renderHero(k) {
   $('#h-klab').textContent = k; $('#h-klab2').textContent = k; $('#h-k').value = k;
   document.querySelectorAll('#stage .kk').forEach(n => n.textContent = k);
-  // matrix grows to (k+1) x (k+1); the new row and column pop in
-  let h = '<tr><th></th>' + Array.from({length: k + 1}, (_, j) => `<th class="d">D${j}</th>`).join('') + '</tr>';
-  for (let i = 0; i <= k; i++) {
-    h += `<tr><th class="a">A${i}</th>`;
-    for (let j = 0; j <= k; j++) {
+  // matrix grows to (k+1) x (k+1) inside a fixed 6 x 6 frame, so the layout never shifts; the new row and column pop in
+  let h = '<tr><th></th>' + Array.from({length: 6}, (_, j) => `<th class="d${j > k ? ' hide' : ''}">D${j}</th>`).join('') + '</tr>';
+  for (let i = 0; i < 6; i++) {
+    h += `<tr><th class="a${i > k ? ' hide' : ''}">A${i}</th>`;
+    for (let j = 0; j < 6; j++) {
+      if (i > k || j > k) { h += '<td class="hide"></td>'; continue; }
       const v = M[i][j], fresh = (i === k || j === k);
       h += `<td class="${NASH_D[k][j] ? 'nash' : ''}" style="background:${cellBg(v)};color:${Math.abs(v) > 0.6 ? '#fff' : 'inherit'};${fresh ? '' : 'animation:none'}">${fmt2(v)}</td>`;
     }
     h += '</tr>';
   }
   $('#matrix').innerHTML = h;
-  $('#mix').innerHTML = Array.from({length: k}, (_, x) => x + 1).map(j => { const w = NASH_D[k][j] || 0;
-    return `<div class="mixrow"><span>D${j}</span><div class="bar"><span style="width:${w * 100}%"></span></div><span>${w ? w.toFixed(2) : '—'}</span></div>`; }).join('');
+  $('#mix').innerHTML = [1, 2, 3, 4, 5].map(j => { const w = NASH_D[k][j] || 0;
+    return `<div class="mixrow${j > k ? ' hide' : ''}"><span>D${j}</span><div class="bar"><span style="width:${w * 100}%"></span></div><span>${w ? w.toFixed(2) : '—'}</span></div>`; }).join('');
   $('#worst').textContent = fmt2(WORST[k]);
   // safety and helpfulness together
   const S = PS[k - 1], H = PH[k - 1];
