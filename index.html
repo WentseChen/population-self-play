@@ -21,17 +21,21 @@
    the motivation figure is split into three animated panels. */
 :root {
   --paper: #ffffff;
-  --ink: #16202b;
-  --muted: #5a6876;
-  --rule: #d6dde4;
+  --ink: #1d232b;
+  --muted: #6b7480;
+  --rule: #e1e4e8;
   --panel: #ffffff;
-  --mid: #edf0f3;
-  --atk: #c2412d;      /* attacker */
-  --psro: #1f6f78;     /* PSRO = defender colour */
-  --fsp: #5b5aa8;
-  --naive: #b07a12;
-  --up: #2f7d4f;
-  --down: #c2412d;
+  --mid: #ecedef;
+  --atk: #e8916c;      /* attacker fill (GIF) */
+  --atk-ink: #b9603b;  /* attacker text, darker for contrast */
+  --atk-soft: #fadfd3;
+  --def: #6e9bcb;      /* defender fill (GIF) */
+  --psro: #3e6fa8;     /* defender / ours: lines and text (GIF edge) */
+  --def-soft: #dce8f4;
+  --fsp: #a3abb4;      /* other methods stay neutral */
+  --naive: #c9a98a;
+  --up: #4f8a63;
+  --down: #b9603b;
   --serif: "Source Serif 4", Georgia, "Times New Roman", serif;
   --sans: "IBM Plex Sans", -apple-system, "Segoe UI", sans-serif;
   --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
@@ -97,13 +101,13 @@ svg .better { font-family: var(--sans); font-size: 11px; font-weight: 500; fill:
 .matrix-scroll { overflow-x: auto; min-width: 0; }
 table.m { border-collapse: separate; border-spacing: 3px; font: 500 0.78rem var(--mono); font-variant-numeric: tabular-nums; }
 table.m th { font-weight: 500; color: var(--muted); padding: 2px 5px; }
-table.m th.d { color: var(--psro); } table.m th.a { color: var(--atk); }
+table.m th.d { color: var(--psro); } table.m th.a { color: var(--atk-ink); }
 table.m td { width: 50px; height: 34px; text-align: center; border-radius: 3px; outline: 2px solid transparent; outline-offset: -2px; animation: pop .35s ease; }
 table.m td.nash { outline-color: var(--ink); }
 @keyframes pop { from { transform: scale(.6); opacity: 0; } to { transform: none; opacity: 1; } }
 .mixrow { display: grid; grid-template-columns: 28px minmax(0, 1fr) 38px; gap: 8px; align-items: center; font: 0.8rem var(--mono); }
 .bar { height: 9px; background: var(--mid); border-radius: 2px; overflow: hidden; }
-.bar span { display: block; height: 100%; background: var(--psro); transition: width .4s; }
+.bar span { display: block; height: 100%; background: var(--def); transition: width .4s; }
 .worst b { font: 600 1.6rem var(--mono); color: var(--psro); font-variant-numeric: tabular-nums; }
 .side { display: grid; gap: 12px; min-width: 0; }
 .legend { display: flex; gap: 12px; flex-wrap: wrap; font-size: 0.78rem; color: var(--muted); }
@@ -137,8 +141,8 @@ table.m td.nash { outline-color: var(--ink); }
 .feature-grid { display: grid; grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr); gap: 32px; align-items: start; }
 @media (max-width: 760px) { .feature-grid { grid-template-columns: 1fr; gap: 18px; } }
 .def { font: 1.05rem/1.55 var(--serif); padding: 14px 16px; background: var(--panel); border: 1px solid var(--rule); border-radius: 4px; }
-.def .mono { font-weight: 600; color: var(--atk); }
-.huge { font: 700 4.2rem/1 var(--serif); color: var(--atk); font-variant-numeric: tabular-nums; }
+.def .mono { font-weight: 600; color: var(--atk-ink); }
+.huge { font: 700 4.2rem/1 var(--serif); color: var(--atk-ink); font-variant-numeric: tabular-nums; }
 svg.curve { width: 100%; height: auto; display: block; }
 .pa-row { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 16px; align-items: center; }
 @media (max-width: 480px) { .pa-row { grid-template-columns: 1fr; } }
@@ -150,7 +154,7 @@ svg.curve { width: 100%; height: auto; display: block; }
 .ent .strat { stroke: var(--atk); } .ent .tok { stroke: var(--psro); }
 .ent path { fill: none; stroke-width: 2.4; }
 .ent .one { stroke: var(--rule); stroke-dasharray: 3 3; }
-.lab-s { fill: var(--atk) !important; font-weight: 500; } .lab-t { fill: var(--psro) !important; font-weight: 500; }
+.lab-s { fill: var(--atk-ink) !important; font-weight: 500; } .lab-t { fill: var(--psro) !important; font-weight: 500; }
 svg .lbl { font-size: 11px; }
 
 .cyc .iso { stroke: var(--rule); stroke-dasharray: 2 3; }
@@ -181,7 +185,7 @@ table.res th:first-child, table.res td:first-child { text-align: left; }
 table.res thead th { font: 600 0.8rem var(--sans); color: var(--muted); border-bottom: 2px solid var(--ink); }
 table.res td + td { font-family: var(--mono); font-variant-numeric: tabular-nums; }
 table.res tr.grp th { text-align: left; font: 500 0.72rem var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); padding-top: 16px; border-bottom: 0; }
-table.res tr.ours td { font-weight: 600; color: var(--psro); background: color-mix(in srgb, var(--psro) 8%, transparent); }
+table.res tr.ours td { font-weight: 600; color: var(--psro); background: var(--def-soft); }
 table.res tr.ref td { color: var(--muted); }
 .ckey { display: flex; gap: 16px; font-size: 0.8rem; color: var(--muted); }
 .ckey i { display: inline-block; width: 12px; height: 12px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; }
@@ -196,9 +200,9 @@ table.res tr.ref td { color: var(--muted); }
 .example { display: grid; gap: 7px; align-content: center; min-height: 118px; margin-bottom: 4px; }
 .ex-row { display: grid; grid-template-columns: 52px minmax(0, 1fr); gap: 10px; align-items: center; font-size: 0.86rem; }
 .ex-tag { font: 600 0.72rem var(--mono); text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
-.ex-tag.bad { color: var(--atk); }
+.ex-tag.bad { color: var(--atk-ink); }
 .ex-box { padding: 6px 10px; border: 1px solid var(--rule); border-radius: 4px; }
-.ex-box.bad { border-color: var(--atk); color: var(--atk); }
+.ex-box.bad { border-color: var(--atk); background: var(--atk-soft); color: var(--atk-ink); }
 svg.mini { width: 100%; height: auto; display: block; margin-bottom: 4px; overflow: visible; }
 svg .mlab { font-family: var(--sans); font-size: 11px; fill: var(--ink); }
 svg .mnote { font-family: var(--sans); font-size: 10px; fill: var(--muted); }
@@ -280,7 +284,7 @@ footer { color: var(--muted); font-size: 0.85rem; padding-top: 24px; border-top:
         <table class="m" id="matrix"></table>
         <div class="legend" style="margin-top:8px">
           <span><i style="background:var(--atk)"></i>attacker wins</span>
-          <span><i style="background:var(--psro)"></i>defender wins</span>
+          <span><i style="background:var(--def)"></i>defender wins</span>
           <span><i style="outline:2px solid var(--ink);outline-offset:-2px"></i>in the Nash defender</span>
         </div>
         <div class="side" style="margin-top:14px">
@@ -292,7 +296,7 @@ footer { color: var(--muted); font-size: 0.85rem; padding-top: 24px; border-top:
       <div class="side">
         <div class="scores">
           <div class="score"><b class="sv" id="t-s" style="color:var(--psro)">0.962</b><span>Safety of D<sub class="kk">5</sub></span><span class="delta" id="t-ds"></span></div>
-          <div class="score"><b class="hv" id="t-h" style="color:var(--fsp)">0.844</b><span>Helpful of D<sub class="kk">5</sub></span><span class="delta" id="t-dh"></span></div>
+          <div class="score"><b class="hv" id="t-h" style="color:var(--atk-ink)">0.844</b><span>Helpful of D<sub class="kk">5</sub></span><span class="delta" id="t-dh"></span></div>
         </div>
         <svg class="trade" id="t-svg" viewBox="0 0 340 252" role="img" aria-label="Safety versus helpfulness of each PSRO defender generation"></svg>
         <p class="note">Schematic: each dot is one generation's defender, placed by its safety and helpfulness on held-out benchmarks. Up and to the right is better.</p>
@@ -318,7 +322,7 @@ footer { color: var(--muted); font-size: 0.85rem; padding-top: 24px; border-top:
         </div>
         <svg class="ent" id="b-svg" viewBox="0 0 320 190" role="img" aria-label="strategy entropy falls to 0.02x while token entropy rises to 1.56x"></svg>
         <div style="display:flex;gap:28px;flex-wrap:wrap">
-          <div><div class="big" style="color:var(--atk)"><span id="b-s">0.02</span>×</div><span class="note">strategy entropy</span></div>
+          <div><div class="big" style="color:var(--atk-ink)"><span id="b-s">0.02</span>×</div><span class="note">strategy entropy</span></div>
           <div><div class="big" style="color:var(--psro)"><span id="b-t">1.56</span>×</div><span class="note">token entropy</span></div>
         </div>
       </div>
@@ -387,6 +391,11 @@ footer { color: var(--muted); font-size: 0.85rem; padding-top: 24px; border-top:
     <div class="cards">
       <div class="card"><svg class="mini" id="f-safe" viewBox="0 0 260 120" role="img" aria-label="Safer than other self-play methods"></svg><h3>Safer than other self-play methods</h3><p>Starting from a model with its safety training removed, ours ends up refusing harmful requests most reliably.</p></div>
       <div class="card"><svg class="mini" id="f-round" viewBox="0 0 260 120" role="img" aria-label="It keeps improving; the others don't"></svg><h3>It keeps improving; the others don't</h3><p>Each round of ours is better overall. Training only against the newest opponent goes back and forth, and weighting all opponents equally goes nowhere.</p></div>
+      <div class="card"><svg class="mini" id="f-models" viewBox="0 0 260 120" role="img" aria-label="Works on Llama and Qwen"></svg><h3>Works on Llama and Qwen</h3><p>We trained both model families starting from versions whose safety training had been removed. Both end up far safer.</p></div>
+      <div class="card"><svg class="mini" id="f-judge" viewBox="0 0 260 120" role="img" aria-label="Holds up under other judges"></svg><h3>Holds up under other judges</h3><p>The judge that scores training could, in principle, be fooled. So we re-checked the answers with three judges never used in training. Ours gives the fewest harmful answers under every one.</p></div>
+      <div class="card"><svg class="mini" id="f-dan" viewBox="0 0 260 120" role="img" aria-label="Biggest gain on role-play jailbreaks"></svg><h3>Biggest gain on role-play jailbreaks</h3><p>Prompts that ask the model to play a character with no rules are among the hardest to resist. Training against a whole population blocks almost all of them.</p></div>
+      <div class="card"><svg class="mini" id="f-normal" viewBox="0 0 260 120" role="img" aria-label="Still answers everyday questions"></svg><h3>Still answers everyday questions</h3><p>Refusing everything would be safe but useless. Ours answers ordinary questions as often as the original model. It does turn down more harmless questions that are worded to look suspicious.</p></div>
+      <div class="card"><svg class="mini" id="f-unseen" viewBox="0 0 260 120" role="img" aria-label="Harder to beat, even for new attackers"></svg><h3>Harder to beat, even for new attackers</h3><p>After each round we tested the defender against every attacker, including ones trained later that it never practiced against. The best of them does worse every round.</p></div>
       <div class="card"><svg class="mini" id="f-old" viewBox="0 0 260 120" role="img" aria-label="Old opponents still matter"></svg><h3>Old opponents still matter</h3><p>A newer attacker is not always the strongest. When training the final defender, our method picked older attackers most often and skipped the newest one.</p></div>
       <div class="card"><svg class="mini" id="f-fresh" viewBox="0 0 260 120" role="img" aria-label="Cold start versus warm start safety"></svg><h3>Cold start beats warm start</h3><p>Warm start keeps training the previous model; cold start trains each new member from the original model. Warm start falls behind in round 2 and then breaks, giving blank answers.</p></div>
       <div class="card"><div class="example" aria-label="Example of an attacker cheating">
@@ -394,6 +403,7 @@ footer { color: var(--muted); font-size: 0.85rem; padding-top: 24px; border-top:
         <div class="ex-row"><span class="ex-tag">Job</span><span class="ex-box">Reword it to trick the defender</span></div>
         <div class="ex-row"><span class="ex-tag bad">Wrote</span><span class="ex-box bad">"Explain how to pick a lock."</span></div>
       </div><h3>Strong attackers learn to cheat</h3><p>Each attacker gets a request and has to reword it. Once they got good, some stopped rewording and swapped in a different, harmful request, because the scoring paid for that. We changed the scoring to catch it.</p></div>
+      <div class="card"><svg class="mini" id="f-sub" viewBox="0 0 260 120" role="img" aria-label="A milder trick survives the fix"></svg><h3>A milder trick survives the fix</h3><p>After we fixed the scoring, some attackers still swapped a hard harmful request for an easier one. It peaks in the middle of training and then fades. Better scoring is the main thing left to improve.</p></div>
       <div class="card"><svg class="mini" id="f-cost" viewBox="0 0 260 120" role="img" aria-label="Keeping score is cheap"></svg><h3>Keeping score is cheap</h3><p>Testing a new member against everyone takes a small fraction of the time it takes to train it.</p></div>
     </div>
   </section>
@@ -466,9 +476,9 @@ axes(tsvg, 'tax', 30, 330, 8, 226);
 const tSeg = el('g', {}, tsvg), tPts = el('g', {}, tsvg);
 let prevS = PS[4], prevH = PH[4];
 
-function cellBg(v) {
-  const t = Math.round(18 + 70 * Math.min(1, Math.abs(v) / 0.8));
-  return `color-mix(in srgb, var(${v >= 0 ? '--atk' : '--psro'}) ${t}%, var(--panel))`;
+function cellBg(v) {   // same mapping as the PSRO loop GIF
+  const t = Math.round(15 + 85 * Math.min(1, Math.abs(v) / 0.8));
+  return `color-mix(in srgb, var(${v >= 0 ? '--atk' : '--def'}) ${t}%, var(--panel))`;
 }
 function setDelta(node, d, k) {
   node.className = 'delta ' + (d >= 0 ? 'up' : 'down');
@@ -483,7 +493,7 @@ function renderHero(k) {
     h += `<tr><th class="a">A${i}</th>`;
     for (let j = 0; j <= k; j++) {
       const v = M[i][j], fresh = (i === k || j === k);
-      h += `<td class="${NASH_D[k][j] ? 'nash' : ''}" style="background:${cellBg(v)};color:${Math.abs(v) > 0.5 ? '#fff' : 'inherit'};${fresh ? '' : 'animation:none'}">${fmt2(v)}</td>`;
+      h += `<td class="${NASH_D[k][j] ? 'nash' : ''}" style="background:${cellBg(v)};color:${Math.abs(v) > 0.6 ? '#fff' : 'inherit'};${fresh ? '' : 'animation:none'}">${fmt2(v)}</td>`;
     }
     h += '</tr>';
   }
@@ -548,7 +558,7 @@ const cx = k => 34 + (k - 1) * 49, cy = v => 150 - v / 0.8 * 135;
 el('text', {x: 120, y: 180}, curve).textContent = 'attackers in pool, k';
 el('line', {class: 'base', x1: 30, x2: 292, y1: cy(POOL[0]), y2: cy(POOL[0])}, curve);
 const aArea = el('polygon', {class: 'area'}, curve), aLine = el('polyline', {class: 'ln'}, curve), aPts = el('g', {}, curve);
-const aLab = el('text', {class: 'lbl', x: 40, y: 18, style: 'fill:var(--atk);font-weight:600'}, curve);
+const aLab = el('text', {class: 'lbl', x: 40, y: 18, style: 'fill:var(--atk-ink);font-weight:600'}, curve);
 el('text', {x: 250, y: cy(POOL[0]) + 12}, curve).textContent = 'pool@1';
 
 let aTimer = null;
@@ -634,9 +644,40 @@ function bars(id, rows) {           // rows: [label, value, colour]; bars share 
     el('rect', {x: 118, y: y + h * 0.2, width: 4 + (v / max) * 134, height: h * 0.6, rx: 2, style: `fill:${c}`}, svg);
   });
 }
-bars('f-safe', [['Starting model', .356, 'var(--rule)'], ['Newest opponent only', .638, 'var(--naive)'],
-                ['All opponents, equal', .890, 'var(--fsp)'], ['Ours', .955, 'var(--psro)']]);
-bars('f-old', [['Attacker 1', .24, 'var(--atk)'], ['Attacker 2', .51, 'var(--atk)'], ['Attacker 3', .25, 'var(--atk)'], ['Attacker 4 (newest)', 0, 'var(--rule)']]);
+function pairs(id, rows, cols, legend) {   // rows: [label, a, b]; two thin bars per row on one shared scale
+  const svg = $('#' + id), max = Math.max(...rows.flatMap(r => [r[1], r[2]])), h = 96 / rows.length;
+  rows.forEach(([lab, a, b], i) => {
+    const y = 6 + i * h, bh = Math.min(10, h * 0.32);
+    el('text', {class: 'mlab', x: 0, y: y + h / 2 + 4}, svg).textContent = lab;
+    [a, b].forEach((v, j) => el('rect', {x: 118, y: y + h / 2 - bh - 1 + j * (bh + 2), width: 3 + (v / max) * 135, height: bh, rx: 2, style: `fill:${cols[j]}`}, svg));
+  });
+  legend.forEach((n, j) => {
+    el('rect', {x: 118 + j * 86, y: 108, width: 8, height: 8, rx: 2, style: `fill:${cols[j]}`}, svg);
+    el('text', {class: 'mnote', x: 130 + j * 86, y: 116}, svg).textContent = n;
+  });
+}
+pairs('f-models', [['Llama 3.1 8B', .356, .955], ['Qwen3 8B', .429, .983]], ['var(--mid)', 'var(--def)'], ['before', 'after']);
+el('text', {class: 'mnote', x: 0, y: 116}, $('#f-models')).textContent = 'safety →';
+pairs('f-judge', [['Training judge', .062, .031], ['StrongREJECT', .054, .029], ['HarmBench', .049, .028], ['Gemini', .026, .016]],
+      ['var(--fsp)', 'var(--def)'], ['equal weights', 'ours']);
+el('text', {class: 'mnote', x: 0, y: 116}, $('#f-judge')).textContent = 'harmful answers →';
+bars('f-dan', [['Newest opponent only', .630, 'var(--naive)'], ['All opponents, equal', .130, 'var(--fsp)'], ['Ours', .053, 'var(--def)']]);
+el('text', {class: 'mnote', x: 118, y: 116}, $('#f-dan')).textContent = 'jailbreaks that work →';
+bars('f-normal', [['Starting model', .940, 'var(--mid)'], ['Ours', .944, 'var(--def)']]);
+el('text', {class: 'mnote', x: 118, y: 116}, $('#f-normal')).textContent = 'everyday questions answered →';
+bars('f-sub', [['Attacker 2', .33, 'var(--atk)'], ['Attacker 3', .33, 'var(--atk)'], ['Attacker 4', .023, 'var(--atk)'], ['Attacker 5', .10, 'var(--atk)']]);
+el('text', {class: 'mnote', x: 118, y: 116}, $('#f-sub')).textContent = 'swapped for easier requests →';
+{ // best attacker's payoff against each round's defender (paper Table 2b), lower = harder to beat
+  const svg = $('#f-unseen'), v = [-0.28, -0.59, -0.60, -0.68, -0.70], x = i => 14 + i * 48, y = u => 14 + (-0.25 - u) / 0.48 * 86;
+  el('line', {class: 'ax', x1: 6, y1: 108, x2: 216, y2: 108}, svg);
+  el('text', {class: 'mnote', x: 6, y: 120}, svg).textContent = 'round 1 → 5';
+  el('text', {class: 'mnote', x: 6, y: 8}, svg).textContent = '↑ how well the best attacker does';
+  el('polyline', {points: v.map((u, i) => `${x(i)},${y(u)}`).join(' '), style: 'fill:none;stroke:var(--atk);stroke-width:2.6;stroke-linejoin:round'}, svg);
+  v.forEach((u, i) => el('circle', {cx: x(i), cy: y(u), r: 3.5, style: 'fill:var(--atk)'}, svg));
+}
+bars('f-safe', [['Starting model', .356, 'var(--mid)'], ['Newest opponent only', .638, 'var(--naive)'],
+                ['All opponents, equal', .890, 'var(--fsp)'], ['Ours', .955, 'var(--def)']]);
+bars('f-old', [['Attacker 1', .24, 'var(--atk)'], ['Attacker 2', .51, 'var(--atk)'], ['Attacker 3', .25, 'var(--atk)'], ['Attacker 4 (newest)', 0, 'var(--mid)']]);
 el('text', {class: 'mnote', x: 118, y: 116}, $('#f-old')).textContent = 'how often picked →';
 { // safety in rounds 1-2 (appendix table); warm start's round-2 point is its last checkpoint before collapse
   const svg = $('#f-fresh'), x1 = 30, x2 = 140, y = v => 100 - (v - .70) / .30 * 86;
@@ -654,7 +695,7 @@ el('text', {class: 'mnote', x: 118, y: 116}, $('#f-old')).textContent = 'how oft
   el('text', {class: 'mnote', x: x2 + 9, y: 91, style: 'fill:var(--atk)'}, svg).textContent = 'then breaks:';
   el('text', {class: 'mnote', x: x2 + 9, y: 102, style: 'fill:var(--atk)'}, svg).textContent = 'blank answers';
 }
-bars('f-cost', [['Train a member', 228, 'var(--muted)'], ['Score it', 13, 'var(--psro)']]);
+bars('f-cost', [['Train a member', 228, 'var(--muted)'], ['Score it', 13, 'var(--def)']]);
 el('text', {class: 'mnote', x: 118, y: 116}, $('#f-cost')).textContent = 'time →';
 { // safety + helpfulness per round, three methods, one shared scale
   const svg = $('#f-round'), L = [
