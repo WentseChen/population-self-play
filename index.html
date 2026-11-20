@@ -173,6 +173,16 @@ ol.steps { margin: 0; padding-left: 1.3em; display: grid; gap: 8px; max-width: 6
 .track { position: relative; height: 12px; background: var(--mid); border-radius: 2px; }
 .track span { position: absolute; inset: 0 auto 0 0; border-radius: 2px; }
 .s span { background: var(--psro); } .h span { background: var(--muted); opacity: .55; }
+/* results table */
+.tbl-wrap { overflow-x: auto; }
+table.res { width: 100%; max-width: 640px; border-collapse: collapse; font-size: 0.95rem; }
+table.res th, table.res td { padding: 9px 12px; text-align: right; border-bottom: 1px solid var(--rule); }
+table.res th:first-child, table.res td:first-child { text-align: left; }
+table.res thead th { font: 600 0.8rem var(--sans); color: var(--muted); border-bottom: 2px solid var(--ink); }
+table.res td + td { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+table.res tr.grp th { text-align: left; font: 500 0.72rem var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); padding-top: 16px; border-bottom: 0; }
+table.res tr.ours td { font-weight: 600; color: var(--psro); background: color-mix(in srgb, var(--psro) 8%, transparent); }
+table.res tr.ref td { color: var(--muted); }
 .ckey { display: flex; gap: 16px; font-size: 0.8rem; color: var(--muted); }
 .ckey i { display: inline-block; width: 12px; height: 12px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; }
 
@@ -332,10 +342,25 @@ footer { color: var(--muted); font-size: 0.85rem; padding-top: 24px; border-top:
   <section>
     <p class="eyebrow">Results</p>
     <h2>Safer than every other self-play method</h2>
-    <p class="prose">All Llama rows start from the abliterated Llama-3.1-8B-Instruct, whose safety training has been removed. Safety averages seven harmful-prompt measures; helpfulness averages benign compliance on WildJailbreak and XSTest. PSRO pays a moderate helpfulness cost.</p>
-    <div class="ckey"><span><i style="background:var(--psro)"></i>Safety</span><span><i style="background:var(--muted);opacity:.6"></i>Helpful</span></div>
-    <div class="chart" id="chart"></div>
-    <p class="note">Llama-3.1-8B-Instruct (Meta's own safety-tuned release) scores 0.935 safety for reference. PSRO, fictitious self-play and MAGIC average two seeds.</p>
+    <p class="prose">Every method starts from an abliterated Llama-3.1-8B-Instruct, whose safety training has been removed. PSRO ends up safer than Meta's own safety-tuned release, at a moderate helpfulness cost.</p>
+    <div class="tbl-wrap"><table class="res">
+      <thead><tr><th>Method</th><th>Safety ↑</th><th>Helpful ↑</th></tr></thead>
+      <tbody>
+        <tr class="grp"><th colspan="3">Starting point</th></tr>
+        <tr class=""><td>Abliterated Llama-3.1-8B-Instruct</td><td>.356</td><td>.936</td></tr>
+        <tr class="grp"><th colspan="3">Other safety training</th></tr>
+        <tr class=""><td>Circuit Breakers</td><td>.579</td><td>.916</td></tr>
+        <tr class=""><td>MAGIC</td><td>.850</td><td>.920</td></tr>
+        <tr class="grp"><th colspan="3">Self-play</th></tr>
+        <tr class=""><td>Naive self-play</td><td>.638</td><td>.886</td></tr>
+        <tr class=""><td>Self-RedTeam</td><td>.808</td><td>.830</td></tr>
+        <tr class=""><td>Fictitious self-play</td><td>.890</td><td>.844</td></tr>
+        <tr class="ours"><td>PSRO (ours)</td><td>.955</td><td>.811</td></tr>
+        <tr class="grp"><th colspan="3">Reference</th></tr>
+        <tr class="ref"><td>Llama-3.1-8B-Instruct (Meta's safety-tuned release)</td><td>.935</td><td>.858</td></tr>
+      </tbody>
+    </table></div>
+    <p class="note">Safety averages seven harmful-prompt measures; Helpful averages benign compliance on WildJailbreak and XSTest. All trained rows start from the abliterated model. PSRO, fictitious self-play and MAGIC average two seeds.</p>
   </section>
 
   <section id="findings">
@@ -568,8 +593,8 @@ whenVisible($('#va'), playA);
 /* ---------------- (b) entropy ---------------- */
 const ES = [[20,1],[60,1.266],[100,.378],[140,.087],[180,.024]];
 const ET = [[20,1],[60,1.040],[100,.974],[140,1.243],[180,1.562]];
-const bsvg = $('#b-svg'), bx = s => 34 + (s - 20) / 160 * 230, by = v => 170 - v / 1.7 * 155;
-[0, .5, 1, 1.5].forEach(v => { el('line', {x1: 30, x2: 300, y1: by(v), y2: by(v), stroke: 'var(--rule)', class: v === 1 ? 'one' : ''}, bsvg);
+const bsvg = $('#b-svg'), bx = s => 34 + (s - 20) / 160 * 200, by = v => 170 - v / 1.7 * 155;
+[0, .5, 1, 1.5].forEach(v => { el('line', {x1: 30, x2: 240, y1: by(v), y2: by(v), stroke: 'var(--rule)', class: v === 1 ? 'one' : ''}, bsvg);
   el('text', {x: 4, y: by(v) + 3}, bsvg).textContent = v.toFixed(1); });
 [20, 100, 180].forEach(s => { el('text', {x: bx(s) - 8, y: 186}, bsvg).textContent = 'step ' + s; });
 const mk = d => d.map(([s, v], i) => (i ? 'L' : 'M') + bx(s) + ',' + by(v)).join(' ');
@@ -612,17 +637,6 @@ whenVisible($('#vc'), playC);
 
 document.querySelectorAll('[data-replay]').forEach(b => b.addEventListener('click', () =>
   ({a: playA, b: playB, c: playC})[b.dataset.replay]()));
-
-/* ---------------- results bars ---------------- */
-const ROWS = [
-  ['Abliterated base', .356, .936], ['+ Circuit Breakers', .579, .916], ['+ naive self-play', .638, .886],
-  ['+ Self-RedTeam', .808, .830], ['+ MAGIC', .850, .920], ['+ fictitious self-play', .890, .844], ['+ PSRO (ours)', .955, .811, true]];
-$('#chart').innerHTML = ROWS.map(([n, s, hp, ours]) => `
-  <div class="crow"><span class="cname${ours ? ' ours' : ''}">${n}</span>
-    <div class="cbars">
-      <div class="cbar s"><div class="track"><span style="width:${s * 100}%"></span></div><span>${s.toFixed(3)}</span></div>
-      <div class="cbar h"><div class="track"><span style="width:${hp * 100}%"></span></div><span>${hp.toFixed(3)}</span></div>
-    </div></div>`).join('');
 
 $('#copy').addEventListener('click', e => {
   navigator.clipboard.writeText($('#bib').textContent).then(() => { e.target.textContent = 'Copied'; })
