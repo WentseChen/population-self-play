@@ -257,7 +257,7 @@ footer { color: var(--muted); font-size: 0.85rem; padding-top: 24px; border-top:
       <a href="https://github.com/WentseChen/psro-llm-safety" id="code-link">Code</a>
       <a href="#bibtex">BibTeX</a>
     </nav>
-    <p class="tldr">Self-play against only the latest opponent cycles and forgets. We keep every attacker and defender, train each new one <b>from the base model</b> against the <b>Nash mixture</b> of the other side, and get the safest defender among the self-play methods we compare.</p>
+    <p class="tldr">Self-play against only the latest opponent cycles and forgets. Population-based self-play (PSRO) has been proposed for red-teaming before; we ask <b>what it takes to make it work for LLMs</b>, and <b>what breaks</b> once the population is strong. The resulting defender is the safest among the self-play methods we compare.</p>
   </header>
 
   <!-- HERO: PSRO, one generation at a time -->
@@ -364,6 +364,7 @@ footer { color: var(--muted); font-size: 0.85rem; padding-top: 24px; border-top:
   <section>
     <p class="eyebrow">Method</p>
     <h2>PSRO, adapted to language models</h2>
+    <p class="prose">We build on Policy-Space Response Oracles (PSRO; <a href="https://arxiv.org/abs/1711.00832">Lanctot et al., 2017</a>) and its use for red-teaming language models (GRTS; <a href="https://arxiv.org/abs/2310.00322">Ma et al., 2023</a>). What we add is a study of what makes it work at 8B scale: which ingredient matters, why each member must start fresh, how to keep the payoff matrix affordable, and how a strong population exposes flaws in the reward.</p>
     <figure>
       <img src="img/psro_loop.gif" alt="Animated PSRO loop: population, payoff matrix, Nash mixture, train a new policy from the base model; six iterations on the real payoff matrix.">
       <figcaption class="note">Six PSRO iterations on our real payoff matrix, growing from 3×3 to 6×6. Each step: measure the new row or column, solve for the Nash mixtures, train the next policy from the base model against opponents sampled from them.</figcaption>
