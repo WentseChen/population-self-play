@@ -59,6 +59,8 @@ a:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid 
 
 header { display: grid; gap: 18px; padding-bottom: 32px; }
 .authors { color: var(--ink); font-size: 1rem; }
+.authors a { color: inherit; text-decoration: none; border-bottom: 1px solid var(--rule); }
+.authors a:hover { border-bottom-color: var(--ink); }
 .authors small { color: var(--muted); font-size: 0.86rem; line-height: 1.7; }
 .links { display: flex; flex-wrap: wrap; gap: 10px; }
 .links a { display: inline-flex; align-items: center; padding: 8px 16px; border: 1px solid var(--ink);
@@ -249,7 +251,7 @@ footer { color: var(--muted); font-size: 0.85rem; padding-top: 24px; border-top:
   <header>
     <p class="eyebrow">LLM safety · multi-agent RL · self-play</p>
     <h1>Population-Based Self-Play for LLM Safety Training</h1>
-    <p class="authors">Wentse Chen<sup>1*</sup>, Xudong Wu<sup>2*</sup>, Yu Gan<sup>3</sup>, Guangchen Lan<sup>4</sup>, Zhihan Zhang<sup>5</sup>, Arvind Krishnamurthy<sup>6</sup>, Jiayu Chen<sup>2†</sup>, Jeff Schneider<sup>1†</sup><br>
+    <p class="authors"><a href="https://wentsechen.github.io/">Wentse Chen</a><sup>1*</sup>, <a href="https://xudongwu-0.github.io/">Xudong Wu</a><sup>2*</sup>, <a href="https://ygan397.github.io/">Yu Gan</a><sup>3</sup>, <a href="https://ericglan.github.io/">Guangchen Lan</a><sup>4</sup>, Zhihan Zhang<sup>5</sup>, <a href="https://www.cs.washington.edu/people/faculty/arvind-krishnamurthy/">Arvind Krishnamurthy</a><sup>6</sup>, <a href="https://www.dase.hku.hk/people/j-y-chen">Jiayu Chen</a><sup>2†</sup>, <a href="https://www.cs.cmu.edu/~schneide/">Jeff Schneider</a><sup>1†</sup><br>
       <small><sup>1</sup>Carnegie Mellon University · <sup>2</sup>University of Hong Kong · <sup>3</sup>Google · <sup>4</sup>Purdue University · <sup>5</sup>Amazon · <sup>6</sup>University of Washington<br>* equal contribution · † equal advising</small></p>
     <nav class="links">
       <a href="#" id="paper-link">Paper (arXiv)</a>
