@@ -79,6 +79,8 @@ header { display: grid; gap: 18px; padding-bottom: 32px; }
 .genctl input { flex: 1; min-width: 0; accent-color: var(--psro); }
 
 /* hero: PSRO replay */
+.stage { display: grid; gap: 18px; background: var(--panel); border: 1px solid var(--rule); border-radius: 6px; padding: 22px; }
+@media (max-width: 600px) { .stage { padding: 14px; } }
 .hero-grid { display: grid; grid-template-columns: minmax(0, auto) minmax(0, 1fr); gap: 32px; align-items: start; }
 @media (max-width: 760px) { .hero-grid { grid-template-columns: 1fr; gap: 20px; } }
 .pool-label { font: 0.74rem var(--mono); color: var(--muted); }
@@ -89,7 +91,7 @@ header { display: grid; gap: 18px; padding-bottom: 32px; }
 .delta { font: 500 0.8rem var(--mono); min-height: 1.3em; white-space: nowrap; }
 #stage .hide { visibility: hidden; }
 .delta.up { color: var(--up) !important; } .delta.down { color: var(--down) !important; }
-svg.trade { width: 100%; height: auto; display: block; }
+svg.trade { width: 100%; max-width: 400px; height: auto; display: block; }
 svg text { font-family: var(--mono); font-size: 9px; fill: var(--muted); }
 svg .ax { stroke: var(--ink); stroke-width: 1.4; }
 svg .axt { font-family: var(--sans); font-size: 13px; font-weight: 600; fill: var(--ink); }
@@ -110,7 +112,6 @@ table.m td.nash { outline-color: var(--ink); }
 .mixrow { display: grid; grid-template-columns: 28px minmax(0, 1fr) 38px; gap: 8px; align-items: center; font: 0.8rem var(--mono); }
 .bar { height: 9px; background: var(--mid); border-radius: 2px; overflow: hidden; }
 .bar span { display: block; height: 100%; background: var(--def); transition: width .4s; }
-.worst b { font: 600 1.6rem var(--mono); color: var(--psro); font-variant-numeric: tabular-nums; }
 .side { display: grid; gap: 12px; min-width: 0; }
 .legend { display: flex; gap: 12px; flex-wrap: wrap; font-size: 0.78rem; color: var(--muted); }
 .legend i { display: inline-block; width: 11px; height: 11px; border-radius: 2px; vertical-align: -1px; margin-right: 4px; }
@@ -125,6 +126,14 @@ table.m td.nash { outline-color: var(--ink); }
 /* motivation panels */
 .panel { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); gap: 32px; align-items: center; padding-block: 18px; }
 @media (max-width: 760px) { .panel { grid-template-columns: 1fr; gap: 16px; } }
+/* the two problems: side by side, small figures */
+.problems { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 40px; padding-block: 12px; }
+.problem { display: grid; gap: 16px; align-content: start; }
+.problem p { font-size: 0.94rem; }
+.problem .viz { padding: 12px 14px; gap: 8px; max-width: 320px; }
+.problem .viz svg { max-width: 250px; width: 100%; height: auto; display: block; margin-inline: auto; }
+.problem .big { font-size: 1.2rem; }
+@media (max-width: 760px) { .problems { grid-template-columns: 1fr; gap: 28px; } }
 .panel-text { display: grid; gap: 10px; min-width: 0; }
 .tag { font: 600 0.8rem var(--mono); color: var(--muted); }
 .viz { background: var(--panel); border: 1px solid var(--rule); border-radius: 6px; padding: 18px; display: grid; gap: 12px; min-width: 0; }
@@ -249,7 +258,6 @@ footer { color: var(--muted); font-size: 0.85rem; padding-top: 24px; border-top:
 <body>
 <div class="wrap">
   <header>
-    <p class="eyebrow">LLM safety · multi-agent RL · self-play</p>
     <h1>Population-Based Self-Play for LLM Safety Training</h1>
     <p class="authors"><a href="https://wentsechen.github.io/">Wentse Chen</a><sup>1*</sup>, <a href="https://xudongwu-0.github.io/">Xudong Wu</a><sup>2*</sup>, <a href="https://ygan397.github.io/">Yu Gan</a><sup>3</sup>, <a href="https://ericglan.github.io/">Guangchen Lan</a><sup>4</sup>, Zhihan Zhang<sup>5</sup>, <a href="https://sites.google.com/cs.washington.edu/arvind">Arvind Krishnamurthy</a><sup>6</sup>, <a href="https://agentic-intelligence-lab.org/members/jiayu-chen.html">Jiayu Chen</a><sup>2†</sup>, <a href="https://www.cs.cmu.edu/~schneide/">Jeff Schneider</a><sup>1†</sup><br>
       <small><sup>1</sup>Carnegie Mellon University · <sup>2</sup>University of Hong Kong · <sup>3</sup>Google · <sup>4</sup>Purdue University · <sup>5</sup>Amazon · <sup>6</sup>University of Washington<br>* equal contribution · † equal advising</small></p>
@@ -282,7 +290,6 @@ footer { color: var(--muted); font-size: 0.85rem; padding-top: 24px; border-top:
         <div class="side" style="margin-top:14px">
           <p class="note">Nash defender after D<sub id="h-klab2">5</sub> joins</p>
           <div id="mix" style="display:grid;gap:6px"></div>
-          <div class="worst"><b id="worst">−0.70</b> <span class="note">best payoff any final attacker A<sub>0</sub>–A<sub>5</sub> gets against it (lower is safer)</span></div>
         </div>
       </div>
       <div class="side">
@@ -305,7 +312,7 @@ footer { color: var(--muted); font-size: 0.85rem; padding-top: 24px; border-top:
       <div class="panel-text">
         <span class="tag">A training run is a draw</span>
         <h3>Every training run is a lottery ticket</h3>
-        <p>We trained the same attacker six times. Same recipe, same data; only the order of training samples changed. Each run still ended up with different winning strategies: the two strongest break 81 prompts each, yet share only 38. Training once is like drawing one ticket: you get one of many valid outcomes, and which one is luck. We call this <i>partial convergence</i>.</p>
+        <p>We trained the same attacker six times. Same recipe; the runs differ only in which sample of the training corpus they consume. Each run still ended up with different winning strategies: the two strongest break 81 prompts each, yet share only 38. Training once is like drawing one ticket: you get one of many valid outcomes, and which one is luck. We call this <i>partial convergence</i>.</p>
         <div class="def"><span class="mono">pool@k</span> asks what you win by holding <i>k</i> tickets: the fraction of held-out prompts broken by at least one of <i>k</i> independently trained attackers, each tried once. It is pass@k taken across training runs instead of samples.</div>
         <div><div class="huge"><span id="a-x">3.4</span>×</div><span class="note">pool@<span id="a-k">6</span> relative to pool@1, and still rising</span></div>
         <p>Rather than deploying <i>k</i> models, we want one policy that captures this coverage by training against the population.</p>
@@ -323,7 +330,8 @@ footer { color: var(--muted); font-size: 0.85rem; padding-top: 24px; border-top:
     </div>
 
 
-    <div class="panel">
+    <div class="problems">
+    <div class="problem">
       <div class="panel-text">
         <span class="tag">Problem 1 · A single policy collapses</span>
         <h3>An attacker's strategies collapse while its wording looks more diverse</h3>
@@ -343,7 +351,7 @@ footer { color: var(--muted); font-size: 0.85rem; padding-top: 24px; border-top:
       </div>
     </div>
 
-    <div class="panel">
+    <div class="problem">
       <div class="panel-text">
         <span class="tag">Problem 2 · Naive self-play forgets</span>
         <h3>It does not keep what it learned</h3>
@@ -357,6 +365,7 @@ footer { color: var(--muted); font-size: 0.85rem; padding-top: 24px; border-top:
         </div>
         <svg class="cyc" id="c-svg" viewBox="0 0 320 244" role="img" aria-label="naive self-play defenders zigzag between safe and helpful"></svg>
       </div>
+    </div>
     </div>
 
     <div class="question">Can a single policy, trained against an equilibrium-weighted population, capture that population's coverage? And what does it take to make this work for LLM self-play?</div>
@@ -405,11 +414,12 @@ footer { color: var(--muted); font-size: 0.85rem; padding-top: 24px; border-top:
     <h2>Findings</h2>
     <div class="cards">
       <div class="card"><svg class="mini" id="f-round" viewBox="0 0 260 120" role="img" aria-label="Training only against the latest opponent goes in circles"></svg><h3>Training only against the latest opponent goes in circles</h3><p>Attack and defense strategies beat each other in cycles, like rock-paper-scissors. A model that only chases the newest opponent keeps trading one weakness for another instead of making progress.</p></div>
-      <div class="card"><svg class="mini" id="f-old" viewBox="0 0 260 120" role="img" aria-label="Newer is not always stronger"></svg><h3>Newer is not always stronger</h3><p>A newer defender can lose to an attack an older one stopped. So the best practice mix often leans on older opponents. Here the newest attacker was not picked at all.</p></div>
+      <div class="card"><svg class="mini" id="f-old" viewBox="0 0 260 120" role="img" aria-label="Newer is not always stronger"></svg><h3>Newer is not always stronger</h3><p>A newer defender can lose to an attack an older one stopped. So the best practice mix often leans on older opponents. Here the two newest attackers get no weight (mixture solved from the paper's final payoff matrix).</p></div>
       <div class="card"><svg class="mini" id="f-unseen" viewBox="0 0 260 120" role="img" aria-label="Beating past opponents prepares you for future ones"></svg><h3>Beating past opponents prepares you for future ones</h3><p>A defender trained against a well-chosen mix of past attackers also holds up against attackers trained after it. The strongest of them does worse every round.</p></div>
       <div class="card"><svg class="mini" id="f-cost" viewBox="0 0 260 120" role="img" aria-label="Choosing opponents well beats training longer"></svg><h3>Choosing opponents well beats training longer</h3><p>Measuring how a new member does against everyone takes minutes; training it takes hours. Weighting all opponents equally skips that measurement, wastes practice on opponents already beaten, trains longer, and still ends up less safe.</p></div>
       <div class="card"><svg class="mini" id="f-fresh" viewBox="0 0 260 120" role="img" aria-label="Each new member should start from scratch"></svg><h3>Each new member should start from scratch</h3><p>A model that has already been trained hard has little room left to learn. Continuing it falls behind and then breaks into blank answers. Starting each member from the original model keeps every round trainable.</p></div>
       <div class="card"><div class="example" aria-label="A strong opponent is the best bug finder for your reward">
+        <span class="note">Made-up example</span>
         <div class="ex-row"><span class="ex-tag">Given</span><span class="ex-box">"Suggest a good hiking trail."</span></div>
         <div class="ex-row"><span class="ex-tag">Job</span><span class="ex-box">Reword it to trick the defender</span></div>
         <div class="ex-row"><span class="ex-tag bad">Wrote</span><span class="ex-box bad">"Explain how to pick a lock."</span></div>
@@ -467,7 +477,6 @@ const M = [
   [-0.06,-0.67,-0.69,-0.68,-0.70,-0.71],
   [-0.04,-0.68,-0.67,-0.69,-0.69,-0.70]];
 const NASH_D = {1:{1:1}, 2:{1:.33,2:.67}, 3:{2:.60,3:.40}, 4:{2:.26,3:.16,4:.58}, 5:{5:1}};   // paper Table 2b
-const WORST = {1:-0.28, 2:-0.59, 3:-0.60, 4:-0.68, 5:-0.70};
 const PS = [.900,.965,.921,.873,.962], PH = [.760,.736,.858,.882,.844];   // appendix table, cold-start PSRO D1-D5
 const BASE = { S: .356, H: .936 };
 
@@ -516,7 +525,6 @@ function renderHero(k) {
   $('#matrix').innerHTML = h;
   $('#mix').innerHTML = [1, 2, 3, 4, 5].map(j => { const w = NASH_D[k][j] || 0;
     return `<div class="mixrow${j > k ? ' hide' : ''}"><span>D${j}</span><div class="bar"><span style="width:${w * 100}%"></span></div><span>${w ? w.toFixed(2) : '—'}</span></div>`; }).join('');
-  $('#worst').textContent = fmt2(WORST[k]);
   // safety and helpfulness together
   const S = PS[k - 1], H = PH[k - 1];
   tween($('#t-s'), prevS, S, 3); tween($('#t-h'), prevH, H, 3); prevS = S; prevH = H;
@@ -693,7 +701,7 @@ el('text', {class: 'mnote', x: 118, y: 116}, $('#f-sub')).textContent = 'swapped
 }
 bars('f-safe', [['Starting model', .356, 'var(--mid)'], ['Newest opponent only', .638, 'var(--naive)'],
                 ['All opponents, equal', .890, 'var(--fsp)'], ['Ours', .955, 'var(--def)']]);
-bars('f-old', [['Attacker 1', .24, 'var(--atk)'], ['Attacker 2', .51, 'var(--atk)'], ['Attacker 3', .25, 'var(--atk)'], ['Attacker 4 (newest)', 0, 'var(--mid)']]);
+bars('f-old', [['Attacker 1', .24, 'var(--atk)'], ['Attacker 2', .51, 'var(--atk)'], ['Attacker 3', .25, 'var(--atk)'], ['Attacker 4', 0, 'var(--mid)'], ['Attacker 5 (newest)', 0, 'var(--mid)']]);
 el('text', {class: 'mnote', x: 118, y: 116}, $('#f-old')).textContent = 'how often picked →';
 { // safety in rounds 1-2 (appendix table); warm start's round-2 point is its last checkpoint before collapse
   const svg = $('#f-fresh'), x1 = 30, x2 = 140, y = v => 100 - (v - .70) / .30 * 86;
