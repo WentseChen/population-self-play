@@ -32,7 +32,7 @@
   --psro: #3e6fa8;     /* defender / ours: lines and text (GIF edge) */
   --def-soft: #dce8f4;
   --fsp: #a3abb4;      /* other methods stay neutral */
-  --naive: #c9a98a;
+  --naive: #c08a63;
   --up: #4f8a63;
   --down: #b9603b;
   --serif: "Source Serif 4", Georgia, "Times New Roman", serif;
@@ -126,14 +126,17 @@ table.m td.nash { outline-color: var(--ink); }
 /* motivation panels */
 .panel { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); gap: 32px; align-items: center; padding-block: 18px; }
 @media (max-width: 760px) { .panel { grid-template-columns: 1fr; gap: 16px; } }
-/* the two problems: side by side, small figures */
-.problems { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 40px; padding-block: 12px; }
-.problem { display: grid; gap: 16px; align-content: start; }
-.problem p { font-size: 0.94rem; }
-.problem .viz { padding: 12px 14px; gap: 8px; max-width: 320px; }
-.problem .viz svg { max-width: 250px; width: 100%; height: auto; display: block; margin-inline: auto; }
-.problem .big { font-size: 1.2rem; }
-@media (max-width: 760px) { .problems { grid-template-columns: 1fr; gap: 28px; } }
+/* the two problems: one figure, one text */
+.twin { display: grid; gap: 14px; padding-block: 12px; }
+.twin .viz-head h3 { font-size: 1.12rem; }
+.twin-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px; max-width: 760px; }
+@media (max-width: 620px) { .twin-grid { grid-template-columns: 1fr; gap: 18px; } }
+.twin svg { width: 100%; max-width: 360px; height: auto; display: block; margin-top: 6px; }
+.cyc .iso { stroke: var(--muted); stroke-dasharray: 4 4; }
+.cyc .seg.ours { stroke: var(--psro); marker-end: url(#arrow2); }
+.cyc .p.ours { fill: var(--psro); }
+#arrow2 path { fill: var(--psro); }
+.cyc .sname { font-family: var(--sans); font-size: 12px; font-weight: 600; }
 .panel-text { display: grid; gap: 10px; min-width: 0; }
 .tag { font: 600 0.8rem var(--mono); color: var(--muted); }
 .viz { background: var(--panel); border: 1px solid var(--rule); border-radius: 6px; padding: 18px; display: grid; gap: 12px; min-width: 0; }
@@ -181,7 +184,6 @@ svg.curve { width: 100%; height: auto; display: block; }
 .lab-s { fill: var(--atk-ink) !important; font-weight: 500; } .lab-t { fill: var(--psro) !important; font-weight: 500; }
 svg .lbl { font-size: 11px; }
 
-.cyc .iso { stroke: var(--rule); stroke-dasharray: 2 3; }
 .cyc .seg { stroke: var(--naive); stroke-width: 1.8; fill: none; marker-end: url(#arrow); }
 .cyc .p { fill: var(--naive); }
 .cyc .plab { fill: var(--ink); font-size: 11px; font-weight: 500; }
@@ -298,7 +300,7 @@ footer { color: var(--muted); font-size: 0.85rem; padding-top: 24px; border-top:
           <div class="score"><b class="hv" id="t-h" style="color:var(--atk-ink)">0.844</b><span>Helpful of D<sub class="kk">5</sub></span><span class="delta" id="t-dh"></span></div>
         </div>
         <svg class="trade" id="t-svg" viewBox="0 0 340 252" role="img" aria-label="Safety versus helpfulness of each PSRO defender generation"></svg>
-        <p class="note">Schematic: each dot is one generation's defender, placed by its safety and helpfulness on held-out benchmarks. Up and to the right is better.</p>
+        <p class="note">Each dot is one generation's defender, placed by its safety and helpfulness on held-out benchmarks (one training seed). Up and to the right is better. The comparison with naive self-play below uses the same axes.</p>
       </div>
     </div>
   </div>
@@ -330,42 +332,20 @@ footer { color: var(--muted); font-size: 0.85rem; padding-top: 24px; border-top:
     </div>
 
 
-    <div class="problems">
-    <div class="problem">
-      <div class="panel-text">
-        <span class="tag">Problem 1 · A single policy collapses</span>
-        <h3>An attacker's strategies collapse while its wording looks more diverse</h3>
-        <p>One might expect a policy trained for longer to pick up all of these strategies by itself. Reinforcement learning works against this: it piles probability onto whichever strategy pays most right now. We trained one attacker against a fixed defender. As it trains, the entropy over the attack strategies it uses falls to 0.02× its starting value.</p>
-        <p>Token-level entropy, the usual diversity monitor, rises to 1.56× over the same steps. The attacker writes longer, more varied sentences around fewer ideas, so the monitor reports the opposite of what is happening. Training longer does not fix this.</p>
-      </div>
-      <div class="viz" id="vb">
+    <div class="twin">
+      <div class="viz" id="vbc">
         <div class="viz-head">
-          <span class="note">Entropy relative to step 20, one attacker run</span>
-          <button class="replay" type="button" data-replay="b">Replay</button>
+          <h3>A single policy narrows, then forgets</h3>
+          <button class="replay" type="button" data-replay="bc">Replay</button>
         </div>
-        <svg class="ent" id="b-svg" viewBox="0 0 320 190" role="img" aria-label="strategy entropy falls to 0.02x while token entropy rises to 1.56x"></svg>
-        <div style="display:flex;gap:28px;flex-wrap:wrap">
-          <div><div class="big" style="color:var(--atk-ink)"><span id="b-s">0.02</span>×</div><span class="note">strategy entropy</span></div>
-          <div><div class="big" style="color:var(--psro)"><span id="b-t">1.56</span>×</div><span class="note">token entropy</span></div>
+        <div class="twin-grid">
+          <div><span class="note">One attacker as it trains: entropy relative to the start</span>
+            <svg class="ent" id="b-svg" viewBox="0 0 320 244" role="img" aria-label="strategy entropy collapses while token entropy rises"></svg></div>
+          <div><span class="note">Five defender generations on the same axes</span>
+            <svg class="cyc" id="c-svg" viewBox="0 0 320 244" role="img" aria-label="naive self-play slides between safe and helpful; every PSRO generation lies above it"></svg></div>
         </div>
       </div>
-    </div>
-
-    <div class="problem">
-      <div class="panel-text">
-        <span class="tag">Problem 2 · Naive self-play forgets</span>
-        <h3>It does not keep what it learned</h3>
-        <p>Naive self-play trains each new defender against the newest attacker only, so nothing asks it to keep resisting earlier attacks. On WildJailbreak, the fourth defender is broken by 10% of prompts; the fifth, trained against a newer attacker, by 74%.</p>
-        <p>Strategies beat each other in cycles, so the defender is pushed around a loop instead of up a ladder: it swings between refusing broadly, which is safe but unhelpful, and complying broadly, which is helpful but unsafe.</p>
-      </div>
-      <div class="viz" id="vc">
-        <div class="viz-head">
-          <span class="note">Naive self-play defenders D<sub>1</sub>–D<sub>5</sub></span>
-          <button class="replay" type="button" data-replay="c">Replay</button>
-        </div>
-        <svg class="cyc" id="c-svg" viewBox="0 0 320 244" role="img" aria-label="naive self-play defenders zigzag between safe and helpful"></svg>
-      </div>
-    </div>
+      <p class="prose">One policy cannot pick up every strategy by training longer. Reinforcement learning piles probability onto whichever strategy pays most, so an attacker's strategies collapse even as its wording looks more diverse (left). Retraining against only the newest opponent does not help: nothing asks the defender to keep resisting earlier attacks, so naive self-play slides back and forth between refusing broadly and complying broadly. Every PSRO generation stays on the better side of that trade-off (right; dashed line: equal safety plus helpfulness; one seed each).</p>
     </div>
 
     <div class="question">Can a single policy, trained against an equilibrium-weighted population, capture that population's coverage? And what does it take to make this work for LLM self-play?</div>
@@ -491,13 +471,16 @@ function axes(svg, id, x0, x1, y0, y1) {
   yt.textContent = 'Helpfulness →';
   const b = el('text', {class: 'better', x: x1 - 4, y: y0 + 12, 'text-anchor': 'end'}, svg); b.textContent = 'better ↗';
 }
-const tsvg = $('#t-svg'), tx = v => 44 + (v - .85) / .13 * 270, ty = v => 212 - (v - .70) / .22 * 190;
+// both safety-helpfulness plots use this one range, so their shapes can be compared
+const RS = [.60, 1.00], RH = [.62, .96];
+const tsvg = $('#t-svg'), tx = v => 34 + (v - RS[0]) / (RS[1] - RS[0]) * 286, ty = v => 222 - (v - RH[0]) / (RH[1] - RH[0]) * 206;
 {
   const tdefs = el('defs', {}, tsvg), tm = el('marker', {id: 'tarrow', viewBox: '0 0 10 10', refX: 9, refY: 5, markerWidth: 6, markerHeight: 6, orient: 'auto'}, tdefs);
   el('path', {d: 'M0,0 L10,5 L0,10 z', style: 'fill:var(--psro)'}, tm);
 }
 axes(tsvg, 'tax', 30, 330, 8, 226);
 const tSeg = el('g', {}, tsvg), tPts = el('g', {}, tsvg);
+const TL = [[-24, 4], [10, 10], [-24, 12], [-24, -4], [10, 4]];   // label offsets D1-D5
 let prevS = PS[4], prevH = PH[4];
 
 function cellBg(v) {   // same mapping as the PSRO loop GIF
@@ -538,7 +521,7 @@ function renderHero(k) {
   PS.slice(0, k).forEach((s, i) => {
     const cur = i === k - 1;
     el('circle', {class: 'tp' + (cur ? ' cur' : ''), cx: tx(s), cy: ty(PH[i]), r: cur ? 7 : 4.5}, tPts);
-    const t = el('text', {class: 'plab', x: tx(s) + (s > .95 ? -26 : 10), y: ty(PH[i]) + 4}, tPts); t.textContent = 'D' + (i + 1);
+    const t = el('text', {class: 'plab', x: tx(s) + TL[i][0], y: ty(PH[i]) + TL[i][1]}, tPts); t.textContent = 'D' + (i + 1);
   });
 }
 
@@ -614,50 +597,54 @@ whenVisible($('#va'), playA);
 /* ---------------- (b) entropy ---------------- */
 const ES = [[20,1],[60,1.266],[100,.378],[140,.087],[180,.024]];
 const ET = [[20,1],[60,1.040],[100,.974],[140,1.243],[180,1.562]];
-const bsvg = $('#b-svg'), bx = s => 34 + (s - 20) / 160 * 200, by = v => 170 - v / 1.7 * 155;
+const bsvg = $('#b-svg'), bx = s => 34 + (s - 20) / 160 * 200, by = v => 206 - v / 1.7 * 190;
 [0, .5, 1, 1.5].forEach(v => { el('line', {x1: 30, x2: 240, y1: by(v), y2: by(v), stroke: 'var(--rule)', class: v === 1 ? 'one' : ''}, bsvg);
   el('text', {x: 4, y: by(v) + 3}, bsvg).textContent = v.toFixed(1); });
-[20, 100, 180].forEach(s => { el('text', {x: bx(s) - 8, y: 186}, bsvg).textContent = 'step ' + s; });
+[20, 100, 180].forEach(s => { el('text', {x: bx(s) - 14, y: 224}, bsvg).textContent = 'step ' + s; });
 const mk = d => d.map(([s, v], i) => (i ? 'L' : 'M') + bx(s) + ',' + by(v)).join(' ');
 const pS = el('path', {class: 'strat', d: mk(ES), pathLength: 1}, bsvg), pT = el('path', {class: 'tok', d: mk(ET), pathLength: 1}, bsvg);
-const lS = el('text', {class: 'lbl lab-s', x: bx(180) + 6, y: by(.024) + 4}, bsvg); lS.textContent = 'strategy';
-const lT = el('text', {class: 'lbl lab-t', x: bx(180) + 6, y: by(1.562) + 4}, bsvg); lT.textContent = 'token';
+const lS = el('text', {class: 'lbl lab-s', x: bx(180) + 6, y: by(.024) + 4}, bsvg); lS.textContent = 'strategies';
+const lT = el('text', {class: 'lbl lab-t', x: bx(180) + 6, y: by(1.562) + 4}, bsvg); lT.textContent = 'wording';
 function playB() {
   [pS, pT].forEach(p => { p.style.transition = 'none'; p.style.strokeDasharray = '1'; p.style.strokeDashoffset = '1'; });
   [lS, lT].forEach(l => { l.style.transition = 'none'; l.style.opacity = 0; });
   bsvg.getBoundingClientRect();
   [pS, pT].forEach(p => { p.style.transition = 'stroke-dashoffset 2.4s ease-in-out'; p.style.strokeDashoffset = '0'; });
   setTimeout(() => [lS, lT].forEach(l => { l.style.transition = 'opacity .4s'; l.style.opacity = 1; }), 2300);
-  tween($('#b-s'), 1, 0.02, 2, 2400); tween($('#b-t'), 1, 1.56, 2, 2400);
 }
-whenVisible($('#vb'), playB);
 
 /* ---------------- (c) naive cycle ---------------- */
 const NV = [[.653,.932],[.877,.654],[.731,.912],[.856,.690],[.638,.886]];   // naive self-play D1-D5 (safety, helpful)
-const csvg = $('#c-svg'), qx = v => 40 + (v - .6) / .32 * 260, qy = v => 210 - (v - .6) / .37 * 195;
-const defs = el('defs', {}, csvg), mkr = el('marker', {id: 'arrow', viewBox: '0 0 10 10', refX: 9, refY: 5, markerWidth: 7, markerHeight: 7, orient: 'auto-start-reverse'}, defs);
-el('path', {d: 'M0,0 L10,5 L0,10 z'}, mkr);
+const csvg = $('#c-svg'), qx = v => 34 + (v - RS[0]) / (RS[1] - RS[0]) * 270, qy = v => 212 - (v - RH[0]) / (RH[1] - RH[0]) * 196;
+const defs = el('defs', {}, csvg);
+['arrow', 'arrow2'].forEach(id => el('path', {d: 'M0,0 L10,5 L0,10 z'},
+  el('marker', {id, viewBox: '0 0 10 10', refX: 9, refY: 5, markerWidth: 6, markerHeight: 6, orient: 'auto'}, defs)));
 axes(csvg, 'cax', 26, 314, 6, 216);
+// every naive generation has safety + helpfulness <= 1.643, every PSRO generation >= 1.660
+el('line', {class: 'iso', x1: qx(1.65 - .95), y1: qy(.95), x2: qx(.99), y2: qy(1.65 - .99)}, csvg);
 const cSeg = el('g', {}, csvg), cPts = el('g', {}, csvg);
+const SERIES = [[NV, ''], [PS.map((s, i) => [s, PH[i]]), ' ours']];
 let cTimer = null;
 function renderC(n) {
   cSeg.innerHTML = ''; cPts.innerHTML = '';
-  for (let i = 1; i < n; i++) {
-    const [a, b] = [NV[i - 1], NV[i]], dx = qx(b[0]) - qx(a[0]), dy = qy(b[1]) - qy(a[1]), L = Math.hypot(dx, dy), sh = 8 / L;
-    el('line', {class: 'seg', x1: qx(a[0]) + dx * sh, y1: qy(a[1]) + dy * sh, x2: qx(b[0]) - dx * sh, y2: qy(b[1]) - dy * sh}, cSeg);
-  }
-  NV.slice(0, n).forEach(([s, h], i) => {
-    el('circle', {class: 'p', cx: qx(s), cy: qy(h), r: i === n - 1 ? 6 : 4.5}, cPts);
-    const t = el('text', {class: 'plab', x: qx(s) + (s > .8 ? 9 : -24), y: qy(h) + 4}, cPts); t.textContent = 'D' + (i + 1);
+  SERIES.forEach(([V, cls]) => {
+    for (let i = 1; i < n; i++) {
+      const [a, b] = [V[i - 1], V[i]], dx = qx(b[0]) - qx(a[0]), dy = qy(b[1]) - qy(a[1]), L = Math.hypot(dx, dy), sh = 7 / L;
+      el('line', {class: 'seg' + cls, x1: qx(a[0]) + dx * sh, y1: qy(a[1]) + dy * sh, x2: qx(b[0]) - dx * sh, y2: qy(b[1]) - dy * sh}, cSeg);
+    }
+    V.slice(0, n).forEach(([s, h], i) => el('circle', {class: 'p' + cls, cx: qx(s), cy: qy(h), r: i === n - 1 ? 6 : 4}, cPts));
   });
+  el('text', {class: 'sname', x: qx(.62), y: qy(.70), style: 'fill:var(--atk-ink)'}, cPts).textContent = 'naive self-play';
+  el('text', {class: 'sname', x: qx(.955), y: qy(.905), 'text-anchor': 'middle', style: 'fill:var(--psro)'}, cPts).textContent = 'PSRO';
 }
 function playC() { clearInterval(cTimer); let n = 1; renderC(1);
-  cTimer = setInterval(() => { if (++n > 5) return clearInterval(cTimer); renderC(n); }, 1000); }
+  cTimer = setInterval(() => { if (++n > 5) return clearInterval(cTimer); renderC(n); }, 900); }
 renderC(5);
-whenVisible($('#vc'), playC);
+const playBC = () => { playB(); playC(); };
+whenVisible($('#vbc'), playBC);
 
 document.querySelectorAll('[data-replay]').forEach(b => b.addEventListener('click', () =>
-  ({a: playA, b: playB, c: playC})[b.dataset.replay]()));
+  ({a: playA, bc: playBC})[b.dataset.replay]()));
 
 /* ---------------- findings: trend sketches, no numbers ---------------- */
 function bars(id, rows) {           // rows: [label, value, colour]; bars share one scale, values not printed
