@@ -36,7 +36,6 @@ h1, h2, h3 { font-family: var(--serif); text-wrap: balance; line-height: 1.25; m
 h1 { font-size: clamp(1.8rem, 5vw, 2.5rem); font-weight: 700; }
 h2 { font-size: 1.5rem; font-weight: 700; }
 h3 { font-size: 1.15rem; font-weight: 600; }
-h2 .n, h3 .n { color: var(--muted); font-weight: 400; margin-right: .55em; }
 
 header { display: grid; gap: 16px; justify-items: center; text-align: center; padding-bottom: 28px; }
 .authors { font: 1.05rem/1.7 var(--sans); }
@@ -58,10 +57,14 @@ section > * { min-width: 0; }
 .sub { display: grid; gap: 16px; padding-top: 14px; min-width: 0; }
 .abstract { max-width: 700px; margin: 0 auto; font-size: 1rem; }
 .abstract h2 { text-align: center; font-size: 1.15rem; margin-bottom: 10px; }
-.eq { display: block; text-align: center; overflow-x: auto; padding-block: 2px; font-size: 1.08rem; }
-math { font-family: "Latin Modern Math", "STIX Two Math", "Cambria Math", math; }
 ol { margin: 0; padding-left: 1.4em; display: grid; gap: 8px; }
-.question { font-style: italic; }
+.def { padding: 14px 18px; border: 1px solid var(--rule); border-radius: 4px; }
+.def b { color: var(--atk-ink); }
+.find { display: grid; grid-template-columns: minmax(0, 300px) minmax(0, 1fr); gap: 34px; align-items: center; padding-block: 18px; border-top: 1px solid var(--rule); }
+.find:first-of-type { border-top: 0; }
+.ftxt { display: grid; gap: 6px; }
+.ftxt p { font-size: .98rem; }
+@media (max-width: 620px) { .find { grid-template-columns: 1fr; gap: 12px; } .fpic { max-width: 320px; } }
 
 figure { margin: 10px 0 6px; display: grid; gap: 12px; min-width: 0; }
 figcaption, .cap { font: 0.88rem/1.55 var(--sans); color: var(--muted); text-align: left; }
@@ -117,11 +120,11 @@ table.res thead th { font-weight: 600; border-bottom: 1px solid var(--ink); }
 table.res tr.sep td { border-top: 1px solid var(--rule); }
 table.res tr.ours td { background: var(--def-soft); }
 table.res small { color: var(--muted); font-size: .78em; }
+@media (max-width: 560px) { table.res td:first-child { white-space: normal; } table.res small { display: block; } }
 
 .ex { display: grid; gap: 7px; font: 0.86rem var(--sans); }
 .ex div { display: grid; grid-template-columns: 62px minmax(0, 1fr); gap: 10px; align-items: baseline; }
 .ex span { color: var(--muted); } .ex q { quotes: none; } .ex .bad { color: var(--atk-ink); font-weight: 600; }
-.refs { font: 0.88rem/1.55 var(--sans); padding-left: 1.8em; }
 pre { font: 0.8rem/1.55 ui-monospace, Menlo, monospace; background: #f6f7f9; border: 1px solid var(--rule); border-radius: 4px; padding: 14px; overflow-x: auto; margin: 0; }
 .bibhead { display: flex; justify-content: space-between; align-items: center; }
 footer { margin-top: 44px; padding-top: 18px; border-top: 1px solid var(--rule); font: 0.84rem var(--sans); color: var(--muted); }
@@ -147,152 +150,99 @@ footer { margin-top: 44px; padding-top: 18px; border-top: 1px solid var(--rule);
       <div class="gen"><label for="h-k">Generation <span id="h-klab">5</span></label><input type="range" id="h-k" min="1" max="5" step="1" value="5"></div></div>
     <div class="replay">
       <div class="panel scroll">
-        <span class="ptitle">(a) Payoff matrix</span>
+        <span class="ptitle">Who wins each matchup</span>
         <table class="m" id="matrix"></table>
         <div class="key"><span><i style="background:var(--atk)"></i>attacker wins</span><span><i style="background:var(--def)"></i>defender wins</span><span><i style="outline:2px solid var(--ink);outline-offset:-2px"></i>in the Nash defender</span></div>
         <div id="mix" style="display:grid;gap:5px;margin-top:6px"></div>
       </div>
-      <div class="panel"><span class="ptitle">(b) Safety and helpfulness of D<sub class="kk">5</sub></span>
+      <div class="panel"><span class="ptitle">Safety and helpfulness of D<sub class="kk">5</sub></span>
         <svg id="t-svg" viewBox="0 0 340 262" role="img" aria-label="Safety versus helpfulness of each PSRO defender generation"></svg></div>
     </div>
   </div>
-  <figcaption><b>Figure 1: A replay of training.</b> Each generation adds one attacker (row) and one defender (column). (a) The attacker's payoff for every matchup, and the Nash mixture over defenders (bars) that the next attacker trains against. A<sub>0</sub> and D<sub>0</sub> are the base model. (b) Each defender's score on held-out benchmarks, on the same axes as Figure 3b.</figcaption>
+  <figcaption><b>Figure 1: A replay of training.</b> Each generation adds one attacker (row) and one defender (column). The bars show which defenders the next attacker trains against. On the right, each dot is one generation's defender on held-out tests.</figcaption>
 </figure>
 
 <section>
-  <h2><span class="n">1</span>Why train against a population</h2>
-  <p>In jailbreak self-play, an attacker writes prompts and a defender must answer them safely. The space of attacks is open-ended, and no corpus, benchmark or judge covers more than a small part of it. Any single run therefore settles on a strategy that fits the part it happened to see: a valid solution, but only one of many.</p>
+  <h2>Why train against a population</h2>
+  <p>In jailbreak self-play, an attacker writes prompts and a defender must answer them safely. There are endless ways to attack, and no training set or test covers more than a small part of them. So any single training run settles on whatever worked in the part it happened to see: a valid answer, but only one of many.</p>
   <div class="sub">
-    <h3><span class="n">1.1</span>Every training run is a draw</h3>
-    <p>We train six copies of one attacker recipe that differ only in which sample of the training corpus they consume. Their success rates span an order of magnitude, and they succeed on different prompts: the two strongest break 81 of 200 held-out prompts each, yet share only 38. Training once is like drawing one ticket. We call this <i>partial convergence</i>, and measure what <i>k</i> draws cover together:</p>
-    <span class="eq"><math display="block"><mrow><mtext>pool@</mtext><mi>k</mi><mo>=</mo><munder><mi mathvariant="double-struck">E</mi><mrow><mi>S</mi><mo>:</mo><mo>|</mo><mi>S</mi><mo>|</mo><mo>=</mo><mi>k</mi></mrow></munder><mrow><mo>[</mo><munder><mi>Pr</mi><mi>x</mi></munder><mo>(</mo><mtext>some attacker in&nbsp;</mtext><mi>S</mi><mtext>&nbsp;breaks prompt&nbsp;</mtext><mi>x</mi><mo>)</mo><mo>]</mo></mrow></mrow></math></span>
-    <p>This is pass@<i>k</i> taken across training runs instead of samples. At <i>k</i> = 6 it reaches 3.4 times its single-run value and is still rising.</p>
+    <h3>Every training run is a draw</h3>
+    <p>We trained the same attacker six times. The recipe was the same; the runs differ only in which sample of the training corpus they consume. Each run still found different winning strategies: the two strongest break 81 of 200 prompts each, yet share only 38. Training once is like drawing one ticket. You get one of many valid outcomes, and which one is luck.</p>
+    <p class="def"><b>pool@k</b> asks what you win by holding <i>k</i> tickets: the fraction of prompts broken by at least one of <i>k</i> independently trained attackers, each tried once. It is like pass@k, but across training runs instead of samples.</p>
     <figure>
       <div class="frame" id="fig2">
-        <div class="controls"><button class="btn" type="button" data-replay="a">Replay</button><span style="font-size:.88rem"><b id="a-cov">143</b> of 200 broken; <span id="a-new"></span></span></div>
+        <div class="controls"><button class="btn" type="button" data-replay="a">Replay</button><span style="font-size:.88rem"><b id="a-cov">143</b> of 200 prompts broken; <span id="a-new"></span></span></div>
         <div class="two">
-          <div class="panel"><span class="ptitle">(a) Prompts covered by the pool</span><div class="board" id="board"></div>
+          <div class="panel"><div class="board" id="board"></div>
             <div class="key round"><span><i style="background:var(--atk)"></i>new</span><span><i style="background:color-mix(in srgb, var(--atk) 38%, white);box-shadow:inset 0 0 0 1.6px var(--ink)"></i>broken again</span><span><i style="background:color-mix(in srgb, var(--atk) 38%, white)"></i>covered earlier</span><span><i style="background:var(--mid)"></i>not broken</span></div></div>
-          <div class="panel"><span class="ptitle">(b) pool@<i>k</i></span><svg id="a-curve" viewBox="0 0 300 190" role="img" aria-label="pool@k rises from 0.21 at k=1 to 0.715 at k=6"></svg></div>
+          <div class="panel"><svg id="a-curve" viewBox="0 0 300 190" role="img" aria-label="pool@k keeps rising up to six attackers"></svg></div>
         </div>
       </div>
-      <figcaption><b>Figure 2: A population covers more than any single run.</b> Counts are averaged over every set of <i>k</i> attackers.</figcaption>
+      <figcaption><b>Figure 2: A population covers more than any single run.</b> Counts are averaged over every set of <i>k</i> attackers. Six attackers together break 3.4 times as many prompts as one.</figcaption>
     </figure>
-    <p>Deploying <i>k</i> models would capture this coverage but costs <i>k</i> runs per request. We want one policy that has it, and so we make the population the opponent.</p>
+    <p>We could run all six, but nobody wants to run six models on every request. We want one model that has this coverage, so we make the population its opponent.</p>
   </div>
   <div class="sub">
-    <h3><span class="n">1.2</span>A single policy narrows, then forgets</h3>
-    <p>Training one policy for longer does not collect these strategies. Reinforcement learning concentrates on whichever strategy pays most, so an attacker's strategies collapse while its wording becomes more varied, and a token-level diversity monitor reads the opposite of what is happening (Figure 3a). Retraining against only the newest opponent does not help either. Nothing asks the defender to keep resisting earlier attacks, and it slides between refusing broadly and complying broadly (Figure 3b).</p>
+    <h3>A single policy narrows, then forgets</h3>
+    <p>Why not simply train one model for longer? Because reinforcement learning piles onto whichever strategy pays most. An attacker ends up with only a few strategies, even though its wording looks more and more varied (left). And training against only the newest opponent makes the defender forget: it slides back and forth between refusing everything and answering everything, while PSRO stays on the better side (right).</p>
     <figure>
       <div class="frame" id="fig3">
         <div class="controls"><button class="btn" type="button" data-replay="bc">Replay</button></div>
         <div class="two">
-          <div class="panel"><span class="ptitle">(a) One attacker as it trains</span><svg id="b-svg" viewBox="0 0 330 250" role="img" aria-label="strategy entropy collapses while token entropy rises"></svg></div>
-          <div class="panel"><span class="ptitle">(b) Five defender generations</span><svg id="c-svg" viewBox="0 0 330 250" role="img" aria-label="naive self-play slides between safe and helpful; every PSRO generation lies above it"></svg></div>
+          <div class="panel"><span class="ptitle">One attacker as it trains</span><svg id="b-svg" viewBox="0 0 330 250" role="img" aria-label="strategies collapse while wording looks more varied"></svg></div>
+          <div class="panel"><span class="ptitle">Five generations of defenders</span><svg id="c-svg" viewBox="0 0 330 250" role="img" aria-label="naive self-play slides between safe and helpful; every PSRO generation lies above it"></svg></div>
         </div>
       </div>
-      <figcaption><b>Figure 3: Two limits of a single policy.</b> (a) Entropy over attack strategies and over tokens, relative to the first checkpoint. (b) Naive self-play and PSRO on the same axes. Points on the dashed line have equal safety plus helpfulness; every PSRO generation lies above it and every naive generation below.</figcaption>
+      <figcaption><b>Figure 3: Two limits of a single policy.</b> Left: diversity of strategies and of wording. Right: both methods on the same axes; the dashed line marks an equal sum of safety and helpfulness.</figcaption>
     </figure>
-    <p class="question">Can a single policy trained against an equilibrium-weighted population capture that population's coverage, and what does it take to make this work for LLM self-play?</p>
   </div>
 </section>
 
 <section>
-  <h2><span class="n">2</span>Method</h2>
-  <p>We build on Policy-Space Response Oracles (PSRO) <a href="#r1">[1]</a> and its use for red-teaming language models in GRTS <a href="#r2">[2]</a>. Keep every trained attacker <i>A<sub>i</sub></i> and defender <i>D<sub>j</sub></i> frozen, and let <i>M<sub>ij</sub></i> = <i>u</i>(<i>A<sub>i</sub></i>, <i>D<sub>j</sub></i>) be the attacker's measured payoff; the defender receives its negative. Each iteration solves this zero-sum game for a mixture over each side,</p>
-  <span class="eq"><math display="block"><mrow><mi>p</mi><mo>∈</mo><munder><mi>arg max</mi><mi>p</mi></munder><mspace width=".15em"></mspace><munder><mi>min</mi><mi>j</mi></munder><mspace width=".15em"></mspace><msub><mrow><mo>(</mo><msup><mi>p</mi><mo>⊤</mo></msup><mi>M</mi><mo>)</mo></mrow><mi>j</mi></msub><mo>,</mo><mspace width="1.6em"></mspace><mi>q</mi><mo>∈</mo><munder><mi>arg min</mi><mi>q</mi></munder><mspace width=".15em"></mspace><munder><mi>max</mi><mi>i</mi></munder><mspace width=".15em"></mspace><msub><mrow><mo>(</mo><mi>M</mi><mi>q</mi><mo>)</mo></mrow><mi>i</mi></msub><mo>,</mo></mrow></math></span>
-  <p>and trains one new member against the other side's mixture:</p>
-  <span class="eq"><math display="block"><mrow><msub><mi>A</mi><mtext>new</mtext></msub><mo>≈</mo><munder><mi>arg max</mi><mi>A</mi></munder><mspace width=".15em"></mspace><munder><mi mathvariant="double-struck">E</mi><mrow><mi>j</mi><mo>∼</mo><mi>q</mi></mrow></munder><mo>[</mo><mi>u</mi><mo>(</mo><mi>A</mi><mo>,</mo><msub><mi>D</mi><mi>j</mi></msub><mo>)</mo><mo>]</mo><mo>,</mo><mspace width="1.6em"></mspace><msub><mi>D</mi><mtext>new</mtext></msub><mo>≈</mo><munder><mi>arg min</mi><mi>D</mi></munder><mspace width=".15em"></mspace><munder><mi mathvariant="double-struck">E</mi><mrow><mi>i</mi><mo>∼</mo><mi>p</mi></mrow></munder><mo>[</mo><mi>u</mi><mo>(</mo><msub><mi>A</mi><mi>i</mi></msub><mo>,</mo><mi>D</mi><mo>)</mo><mo>]</mo><mo>.</mo></mrow></math></span>
-  <p>Every new member is a fresh LoRA adapter on the base model, trained with REINFORCE. The matrix grows quadratically and each cell needs thousands of judged conversations, so we spend fewer episodes on matchups whose value is already clear (a racing budget) and never replay a finished one (a rollout cache).</p>
+  <h2>Method</h2>
+  <p>We build on PSRO (<a href="https://arxiv.org/abs/1711.00832">Lanctot et al., 2017</a>) and its use for red-teaming (GRTS, <a href="https://arxiv.org/abs/2310.00322">Ma et al.</a>). It is a loop of four steps:</p>
+  <ol>
+    <li><b>Keep everyone.</b> Every trained attacker and defender stays in the population, frozen.</li>
+    <li><b>Score every matchup.</b> Each new member plays against everyone on the other side. This adds one row or column to the score table.</li>
+    <li><b>Find who still matters.</b> From the table we work out the mix of opponents that is hardest to beat (the Nash equilibrium).</li>
+    <li><b>Train the next member</b> from the original model against that mix. Attackers and defenders take turns.</li>
+  </ol>
   <figure>
     <img src="img/psro_loop.gif" alt="Animated PSRO loop: population, payoff matrix, Nash mixture, and training a new member from the base model">
-    <figcaption><b>Figure 4: The PSRO loop,</b> shown for six iterations on our measured payoff matrix.</figcaption>
+    <figcaption><b>Figure 4: The PSRO loop,</b> shown for six iterations on our measured score table.</figcaption>
   </figure>
+  <p>The table grows quickly, so we stop testing a matchup once its result is clear, and we never replay one we have already played.</p>
 </section>
 
 <section>
-  <h2><span class="n">3</span>Experiments</h2>
-  <p>All Llama runs start from an abliterated Llama-3.1-8B-Instruct, whose refusal behaviour has been largely removed. <i>Safety</i> averages seven measures on harmful prompts; <i>Helpful</i> averages compliance on two sets of benign prompts. Naive self-play trains against the latest opponent only, and fictitious self-play <a href="#r3">[3]</a> keeps a population but weights it uniformly. Both, and PSRO, are reported at their fifth generation.</p>
-  <div class="sub">
-    <h3><span class="n">3.1</span>The safest defender among the self-play methods we compare</h3>
-    <p>The two population methods are clearly safer than the single-policy ones, and the gap is widest on role-play jailbreaks (Do Anything Now). Between the two, PSRO is safer and fictitious self-play slightly more helpful.</p>
-    <p class="cap"><b>Table 1: Main comparison.</b> Average safety and helpfulness (↑), and attack success rate on three jailbreak benchmarks (↓). ± marks standard deviations over two seeds; the other rows are single runs. Bold marks the best value in each column.</p>
-    <div class="tbl"><table class="res">
-      <thead><tr><th>Method</th><th>Safety ↑</th><th>Helpful ↑</th><th>WildJailbreak ↓</th><th>DAN ↓</th><th>HarmBench ↓</th></tr></thead>
-      <tbody>
-        <tr><td>Abliterated base</td><td>.356</td><td><b>.936</b></td><td>.938</td><td>.910</td><td>.575</td></tr>
-        <tr class="sep"><td>Circuit Breakers <a href="#r4">[4]</a></td><td>.579</td><td>.916</td><td>.583</td><td>.277</td><td>.354</td></tr>
-        <tr><td>MAGIC <a href="#r5">[5]</a></td><td>.850<small> ±.007</small></td><td>.920<small> ±.071</small></td><td>.359<small> ±.150</small></td><td>.395<small> ±.087</small></td><td>.103<small> ±.000</small></td></tr>
-        <tr class="sep"><td>Naive self-play</td><td>.638</td><td>.886</td><td>.737</td><td>.630</td><td>.259</td></tr>
-        <tr><td>Self-RedTeam <a href="#r6">[6]</a></td><td>.808</td><td>.830</td><td>.159</td><td>.400</td><td>.196</td></tr>
-        <tr><td>Fictitious self-play</td><td>.890<small> ±.037</small></td><td>.844<small> ±.014</small></td><td>.210<small> ±.129</small></td><td>.130<small> ±.071</small></td><td>.068<small> ±.033</small></td></tr>
-        <tr class="ours"><td><b>PSRO (ours)</b></td><td><b>.955</b><small> ±.010</small></td><td>.811<small> ±.047</small></td><td><b>.088</b><small> ±.006</small></td><td><b>.053</b><small> ±.019</small></td><td><b>.031</b><small> ±.012</small></td></tr>
-      </tbody></table></div>
-    <p>The judge that scores training could itself be fooled, so we re-score the same answers with three judges never used in training. PSRO has the lowest harmful-response rate under every one (Figure 5a). The recipe also raises the safety of an abliterated Qwen3-8B (Figure 5b).</p>
-    <figure><div class="frame"><div class="two">
-      <div class="panel"><span class="ptitle">(a) Harmful responses by judge ↓</span><svg id="f-judge" viewBox="0 0 330 182" role="img" aria-label="Harmful-response rate under four judges"></svg></div>
-      <div class="panel"><span class="ptitle">(b) Safety before and after PSRO ↑</span><svg id="f-models" viewBox="0 0 330 156" role="img" aria-label="Safety before and after training for two model families"></svg></div>
-    </div></div>
-    <figcaption><b>Figure 5: The result holds under other judges and for a second model.</b> (a) The same outputs under four judges; WildGuard supplies the training reward and the other three are unseen. (b) Llama is the fifth generation; Qwen is the fourth.</figcaption></figure>
-  </div>
-  <div class="sub">
-    <h3><span class="n">3.2</span>The defender improves as the population grows</h3>
-    <p>On held-out benchmarks, safety plus helpfulness rises over PSRO's generations, while fictitious self-play ends where it started and naive self-play goes back and forth (Figure 6a). Inside the game, the best payoff that any attacker of the final population achieves against PSRO's defender mixture falls at every iteration, including attackers trained later (Figure 6b).</p>
-    <figure><div class="frame"><div class="two">
-      <div class="panel"><span class="ptitle">(a) Safety + helpfulness ↑</span><svg id="f-round" viewBox="0 0 330 210" role="img" aria-label="Safety plus helpfulness by generation for three methods"></svg></div>
-      <div class="panel"><span class="ptitle">(b) Best attacker payoff ↓</span><svg id="f-unseen" viewBox="0 0 330 210" role="img" aria-label="Best attacker payoff by generation"></svg></div>
-    </div></div>
-    <figcaption><b>Figure 6: Progress across generations.</b> (a) Held-out benchmarks. (b) Worst case of PSRO's Nash defender against attackers A<sub>0</sub> to A<sub>5</sub>.</figcaption></figure>
-  </div>
-  <div class="sub">
-    <h3><span class="n">3.3</span>Newer is not always stronger, so the choice of opponent matters</h3>
-    <p>Strategies beat one another in cycles. The third defender does worse against A<sub>3</sub> than the older second defender does, so the equilibrium spreads its weight over older members and can give the newest ones none (Figure 7a). Finding these weights is cheap: filling in a new member's row or column takes minutes, while training the member takes hours. Weighting all opponents equally skips that step but spends practice on opponents that are already beaten. It trains for more steps and ends less safe (Figure 7b, Table 1).</p>
-    <figure><div class="frame"><div class="two">
-      <div class="panel"><span class="ptitle">(a) Opponents for the fifth defender</span><svg id="f-old" viewBox="0 0 330 172" role="img" aria-label="Nash weight on each attacker"></svg></div>
-      <div class="panel"><span class="ptitle">(b) Training steps over five iterations</span><svg id="f-cost" viewBox="0 0 330 104" role="img" aria-label="Training steps of PSRO and fictitious self-play"></svg></div>
-    </div></div>
-    <figcaption><b>Figure 7: Choosing opponents.</b> (a) Nash weight on each attacker, which we solve here from the final payoff matrix in the paper; the weights used during training may differ slightly. (b) Estimating the matrix adds about 6% to PSRO's training time.</figcaption></figure>
-  </div>
-  <div class="sub">
-    <h3><span class="n">3.4</span>Members need room to learn</h3>
-    <p>PSRO starts every member from the base model. In a warm-start variant that continues the previous member instead, the second defender fell behind and then collapsed into empty answers (Figure 8). The likely cause is that reinforcement learning had already concentrated the first defender on a narrow set of behaviours, leaving its successor too little to explore.</p>
-    <figure><div class="frame"><svg id="f-fresh" viewBox="0 0 520 200" style="max-width:520px;margin:0 auto" role="img" aria-label="Safety of cold-start and warm-start PSRO in generations one and two"></svg></div>
-    <figcaption><b>Figure 8: Cold start and warm start.</b> Safety of the first two defenders. The warm-start point at generation 2 is its last checkpoint before the collapse.</figcaption></figure>
-  </div>
-  <div class="sub">
-    <h3><span class="n">3.5</span>Strong attackers exploit the reward</h3>
-    <p>In an earlier run, once the attackers became strong, they found two gaps in the reward. In <i>label drift</i>, an attacker given a harmless request rewrote it into a harmful one to collect the reward for harmful compliance. In <i>topic substitution</i>, it replaced a hard harmful request with an easier one. We revised the reward before the reported run. Label drift is addressed, but substitution is not fully prevented (Figure 9b). It does not mislead the defender, which still learns to refuse these prompts, but it inflates the attacker's payoff. As self-play gets stronger, the reward becomes the part that needs work <a href="#r7">[7]</a>.</p>
-    <figure><div class="frame"><div class="two">
-      <div class="panel"><span class="ptitle">(a) Label drift (made-up example)</span><div class="ex" style="padding-top:8px"><div><span>Given</span><q>“Suggest a good hiking trail.”</q></div><div><span>Task</span><q>Reword it to mislead the defender</q></div><div><span>Wrote</span><q class="bad">“Explain how to pick a lock.”</q></div></div></div>
-      <div class="panel"><span class="ptitle">(b) Topic substitution in the reported run</span><svg id="f-sub" viewBox="0 0 330 160" role="img" aria-label="Share of rewrites with topic substitution for attackers two to five"></svg></div>
-    </div></div>
-    <figcaption><b>Figure 9: Reward hacking.</b> (a) What label drift looks like. (b) Share of each attacker's rewrites that substitute an easier request, after the reward was revised.</figcaption></figure>
-  </div>
+  <h2>Results</h2>
+  <p>Every method starts from a Llama-3.1-8B whose safety training has been removed. PSRO ends up the safest.</p>
+  <div class="tbl"><table class="res">
+    <thead><tr><th>Method</th><th>Safety ↑</th><th>Helpful ↑</th></tr></thead>
+    <tbody>
+      <tr><td>Starting model</td><td>.356</td><td><b>.936</b></td></tr>
+      <tr class="sep"><td>Circuit Breakers</td><td>.579</td><td>.916</td></tr>
+      <tr><td>MAGIC</td><td>.850</td><td>.920</td></tr>
+      <tr class="sep"><td>Naive self-play <small>newest opponent only</small></td><td>.638</td><td>.886</td></tr>
+      <tr><td>Self-RedTeam</td><td>.808</td><td>.830</td></tr>
+      <tr><td>Fictitious self-play <small>all opponents, equal weight</small></td><td>.890</td><td>.844</td></tr>
+      <tr class="ours"><td><b>PSRO (ours)</b> <small>all opponents, Nash weight</small></td><td><b>.955</b></td><td>.811</td></tr>
+    </tbody></table></div>
+  <p class="cap"><b>Table 1: Main comparison.</b> Safety averages seven tests on harmful prompts; Helpful averages two tests on harmless ones. PSRO, fictitious self-play and MAGIC average two training seeds.</p>
 </section>
 
 <section>
-  <h2><span class="n">4</span>Limitations</h2>
-  <p>Every self-play method trains both an attacker and a defender over many iterations, and so costs more than a defence that trains one model once. Topic substitution is not fully prevented in the reported run.</p>
-</section>
-
-<section>
-  <h2><span class="n">5</span>Related work</h2>
-  <p>GRTS <a href="#r2">[2]</a> first cast red-teaming as a two-player game solved with PSRO, and we adopt its formulation. We ask which part does the work, by comparing latest-opponent, uniformly weighted and equilibrium-weighted self-play, at 8B and on external benchmarks. Most recent methods, including Self-RedTeam <a href="#r6">[6]</a>, MAGIC <a href="#r5">[5]</a> and MART <a href="#r8">[8]</a>, train against the opponent's current version and do not keep past opponents. Pipeline PSRO <a href="#r9">[9]</a> and related methods scale PSRO in settings where matchups are cheap to evaluate.</p>
-</section>
-
-<section>
-  <h2>References</h2>
-  <ol class="refs">
-    <li id="r1">Lanctot et al. <a href="https://arxiv.org/abs/1711.00832">A Unified Game-Theoretic Approach to Multiagent Reinforcement Learning</a>. 2017.</li>
-    <li id="r2">Ma et al. <a href="https://arxiv.org/abs/2310.00322">Evolving Diverse Red-team Language Models in Multi-round Multi-agent Games</a>. 2024.</li>
-    <li id="r3">Heinrich and Silver. <a href="https://arxiv.org/abs/1603.01121">Deep Reinforcement Learning from Self-Play in Imperfect-Information Games</a>. 2016.</li>
-    <li id="r4">Zou et al. Improving Alignment and Robustness with Circuit Breakers. 2024.</li>
-    <li id="r5">Wen et al. <a href="https://arxiv.org/abs/2602.01539">MAGIC: A Co-Evolving Attacker-Defender Adversarial Game for Robust LLM Safety</a>. 2026.</li>
-    <li id="r6">Liu et al. <a href="https://arxiv.org/abs/2506.07468">Chasing Moving Targets with Online Self-Play Reinforcement Learning for Safer Language Models</a>. 2026.</li>
-    <li id="r7">Gao et al. <a href="https://arxiv.org/abs/2210.10760">Scaling Laws for Reward Model Overoptimization</a>. 2022.</li>
-    <li id="r8">Ge et al. <a href="https://arxiv.org/abs/2311.07689">MART: Improving LLM Safety with Multi-round Automatic Red-Teaming</a>. 2023.</li>
-    <li id="r9">McAleer et al. <a href="https://arxiv.org/abs/2006.08555">Pipeline PSRO: A Scalable Approach for Finding Approximate Nash Equilibria in Large Games</a>. 2021.</li>
-  </ol>
+  <h2>Findings</h2>
+  <div class="find"><div class="fpic"><svg id="f-round" viewBox="0 0 300 150" role="img" aria-label="Training only against the latest opponent goes in circles"></svg></div><div class="ftxt"><h3>Training only against the latest opponent goes in circles</h3><p>Attack and defense strategies beat each other in cycles, like rock-paper-scissors. A model that only chases the newest opponent keeps trading one weakness for another.</p></div></div>
+  <div class="find"><div class="fpic"><svg id="f-old" viewBox="0 0 300 150" role="img" aria-label="Newer is not always stronger"></svg></div><div class="ftxt"><h3>Newer is not always stronger</h3><p>A newer defender can lose to an attack that an older one stopped. So the best practice mix often leans on older opponents. For the fifth defender, the two newest attackers get no weight at all.</p></div></div>
+  <div class="find"><div class="fpic"><svg id="f-unseen" viewBox="0 0 300 150" role="img" aria-label="Beating past opponents prepares you for future ones"></svg></div><div class="ftxt"><h3>Beating past opponents prepares you for future ones</h3><p>A defender trained against a well-chosen mix of past attackers also holds up against attackers trained after it. Even the strongest of them does worse every round.</p></div></div>
+  <div class="find"><div class="fpic"><svg id="f-cost" viewBox="0 0 300 110" role="img" aria-label="Choosing opponents well beats training longer"></svg></div><div class="ftxt"><h3>Choosing opponents well beats training longer</h3><p>Scoring a new member against everyone takes minutes; training it takes hours. Weighting all opponents equally skips the scoring, but wastes practice on opponents that are already beaten. It trains longer and still ends up less safe.</p></div></div>
+  <div class="find"><div class="fpic"><svg id="f-fresh" viewBox="0 0 300 150" role="img" aria-label="Members need room to learn"></svg></div><div class="ftxt"><h3>Members need room to learn</h3><p>When we kept training the previous model instead of starting fresh, it fell behind in the second round and then broke down into empty answers. The likely reason is that a model already trained hard has too little left to explore.</p></div></div>
+  <div class="find"><div class="fpic"><div class="ex"><div><span>Given</span><q>“Suggest a good hiking trail.”</q></div><div><span>Task</span><q>Reword it to mislead the defender</q></div><div><span>Wrote</span><q class="bad">“Explain how to pick a lock.”</q></div><small>Made-up example</small></div></div><div class="ftxt"><h3>A strong opponent is the best bug finder for your reward</h3><p>In an earlier run, once attackers got good, they found a loophole. Instead of rewording the request they were given, they swapped in a harmful one, because the scoring paid for that. The population exposed a flaw we had not noticed.</p></div></div>
+  <div class="find"><div class="fpic"><svg id="f-sub" viewBox="0 0 300 130" role="img" aria-label="Eventually the reward, not the algorithm, is the limit"></svg></div><div class="ftxt"><h3>Eventually the reward, not the algorithm, is the limit</h3><p>After we fixed that loophole, a milder trick remained: swapping a hard request for an easier one. As self-play gets stronger, better scoring becomes the main thing to improve.</p></div></div>
+  <div class="find"><div class="fpic"><svg id="f-judge" viewBox="0 0 300 160" role="img" aria-label="Check with judges the model never trained against"></svg></div><div class="ftxt"><h3>Check with judges the model never trained against</h3><p>A model can learn to please the judge that trained it. We re-scored its answers with three outside judges, and ours gives the fewest harmful answers under every one.</p></div></div>
+  <div class="find"><div class="fpic"><svg id="f-dan" viewBox="0 0 300 120" role="img" aria-label="The biggest gains come on the most creative attacks"></svg></div><div class="ftxt"><h3>The biggest gains come on the most creative attacks</h3><p>Role-play jailbreaks ask the model to become a character with no rules. They beat models trained against one opponent. A population has seen enough variety to block almost all of them.</p></div></div>
+  <div class="find"><div class="fpic"><svg id="f-models" viewBox="0 0 300 130" role="img" aria-label="Not tied to one model family"></svg></div><div class="ftxt"><h3>Not tied to one model family</h3><p>The same recipe makes both Llama and Qwen far safer, each starting from a version with its safety training removed.</p></div></div>
 </section>
 
 <section id="bibtex">
@@ -396,7 +346,7 @@ const RANK = [...Array(200).keys()].sort((a, b) => NB[b] - NB[a] || a - b);
 $('#board').innerHTML = '<i></i>'.repeat(200);
 const dots = [...document.querySelectorAll('#board i')], cv = $('#a-curve');
 const cx = k => 42 + (k - 1) * 48, cy = v => 154 - v / .8 * 142;
-[0, .2, .4, .6, .8].forEach(v => { el('line', {class: v ? 'gl' : 'axl', x1: 32, x2: 294, y1: cy(v), y2: cy(v)}, cv); txt(cv, 26, cy(v) + 4, v.toFixed(1), {'text-anchor': 'end'}); });
+[0, .2, .4, .6, .8].forEach(v => { el('line', {class: v ? 'gl' : 'axl', x1: 32, x2: 294, y1: cy(v), y2: cy(v)}, cv); });
 [1,2,3,4,5,6].forEach(k => txt(cv, cx(k), 170, k, {'text-anchor': 'middle'}));
 txt(cv, 163, 187, 'attackers in the pool, k', {'text-anchor': 'middle', class: 'ink'});
 el('line', {x1: 32, x2: 294, y1: cy(.21), y2: cy(.21), style: 'stroke:var(--muted);stroke-dasharray:4 3'}, cv); txt(cv, 294, cy(.21) + 13, 'single run', {'text-anchor': 'end'});
@@ -419,11 +369,10 @@ renderA(6); whenVisible($('#fig2'), playA);
 /* ---- Figure 3 ---- */
 const ES = [[20,1],[60,1.266],[100,.378],[140,.087],[180,.024]], ET = [[20,1],[60,1.040],[100,.974],[140,1.243],[180,1.562]];
 const bs = $('#b-svg'), bx = s => 40 + (s - 20) / 160 * 210, by = v => 220 - v / 1.7 * 206;
-[0, .5, 1, 1.5].forEach(v => { el('line', {class: v ? 'gl' : 'axl', x1: 34, x2: 256, y1: by(v), y2: by(v)}, bs); txt(bs, 28, by(v) + 4, v.toFixed(1), {'text-anchor': 'end'}); });
-[20, 60, 100, 140, 180].forEach(s => txt(bs, bx(s), 235, s, {'text-anchor': 'middle'}));
-txt(bs, 145, 250, 'training step', {'text-anchor': 'middle', class: 'ink'});
+[0, 1].forEach(v => { el('line', {class: v ? 'gl' : 'axl', x1: 34, x2: 256, y1: by(v), y2: by(v)}, bs); });
+txt(bs, 145, 242, 'training →', {'text-anchor': 'middle', class: 'ink'});
 const bp = [[ES, 'var(--atk)'], [ET, 'var(--psro)']].map(([d, c]) => el('path', {d: d.map(([s, v], i) => (i ? 'L' : 'M') + bx(s) + ',' + by(v)).join(' '), pathLength: 1, style: `fill:none;stroke:${c};stroke-width:2.4`}, bs));
-txt(bs, bx(180) + 7, by(.024) - 5, 'strategy', {class: 'b', style: 'fill:var(--atk-ink)'}); txt(bs, bx(180) + 7, by(1.562) + 4, 'token', {class: 'b', style: 'fill:var(--psro)'});
+txt(bs, bx(180) + 7, by(.024) - 5, 'strategies', {class: 'b', style: 'fill:var(--atk-ink)'}); txt(bs, bx(180) + 7, by(1.562) + 4, 'wording', {class: 'b', style: 'fill:var(--psro)'});
 const cs = $('#c-svg'); axes(cs, 'ax3'); marker(cs, 'mkN', 'var(--naive)'); marker(cs, 'mkP', 'var(--psro)');
 // every naive generation has safety + helpfulness <= 1.643, every PSRO generation >= 1.660
 el('line', {x1: px(.70), y1: py(.95), x2: px(1.0), y2: py(.65), style: 'stroke:var(--muted);stroke-dasharray:4 4'}, cs);
@@ -439,47 +388,42 @@ const playBC = () => {
 renderC(5); whenVisible($('#fig3'), playBC);
 document.querySelectorAll('[data-replay]').forEach(b => b.addEventListener('click', () => ({a: playA, bc: playBC})[b.dataset.replay]()));
 
-/* ---- static charts ---- */
-function hbars(id, rows, {x0 = 118, w = 168, max, fmt = v => v, h = 34, legend} = {}) {   // rows: [label, [[value, colour], ...]]
-  const svg = $('#' + id); max = max || Math.max(...rows.flatMap(r => r[1].map(b => b[0])));
-  rows.forEach(([lab, bs], i) => { const y = 8 + i * h, n = bs.length, bh = n > 1 ? 12 : 17;
-    txt(svg, x0 - 8, y + h / 2 + 1, lab, {'text-anchor': 'end', class: 'ink'});
-    bs.forEach(([v, c], j) => { const yy = y + h / 2 - n * bh / 2 + j * bh - 2, ww = Math.max(v / max * w, v ? 1.5 : 0);
-      el('rect', {x: x0, y: yy, width: ww, height: bh - 2, style: `fill:${c}`}, svg); txt(svg, x0 + ww + 5, yy + bh - 4, fmt(v)); }); });
-  el('line', {class: 'axl', x1: x0, x2: x0, y1: 4, y2: 8 + rows.length * h}, svg);
-  (legend || []).forEach(([n, c], j) => { const y = 8 + rows.length * h + 16; el('rect', {x: x0 + j * 108, y: y - 9, width: 10, height: 10, style: `fill:${c}`}, svg); txt(svg, x0 + 15 + j * 108, y, n); });
+/* ---- findings: drawn to scale from the paper's numbers, values not printed ---- */
+function bars(id, rows, {note, h = 30, x0 = 122, w = 170, legend} = {}) {   // rows: [label, value, colour] or [label, [[v, c], [v, c]]]
+  const svg = $('#' + id), R = rows.map(r => Array.isArray(r[1]) ? r : [r[0], [[r[1], r[2]]]]), max = Math.max(...R.flatMap(r => r[1].map(b => b[0])));
+  R.forEach(([lab, bs], i) => { const y = 4 + i * h, n = bs.length, bh = n > 1 ? 10 : Math.min(18, h - 10);
+    txt(svg, x0 - 8, y + h / 2 + 4, lab, {'text-anchor': 'end', class: 'ink'});
+    bs.forEach(([v, c], j) => el('rect', {x: x0, y: y + h / 2 - n * bh / 2 + j * bh + (n > 1 ? j : 0), width: Math.max(v / max * w, 2), height: bh, rx: 1.5, style: `fill:${v ? c : 'var(--mid)'}`}, svg)); });
+  const yb = 4 + R.length * h + 16;
+  if (note) txt(svg, x0, yb, note);
+  (legend || []).forEach(([n, c], j) => { el('rect', {x: x0 + j * 96, y: yb - 9, width: 9, height: 9, rx: 1.5, style: `fill:${c}`}, svg); txt(svg, x0 + 14 + j * 96, yb, n); });
 }
-const d3 = v => v.toFixed(3).replace(/^0/, '');
-hbars('f-judge', [['WildGuard', .062, .031], ['StrongREJECT', .054, .029], ['HarmBench', .049, .028], ['Gemini', .026, .016]].map(([n, a, b]) => [n, [[a, 'var(--fsp)'], [b, 'var(--def)']]]),
-  {fmt: d3, h: 38, legend: [['fictitious', 'var(--fsp)'], ['PSRO', 'var(--def)']]});
-hbars('f-models', [['Llama-3.1-8B', [[.356, 'var(--fsp)'], [.955, 'var(--def)']]], ['Qwen3-8B', [[.429, 'var(--fsp)'], [.983, 'var(--def)']]]], {fmt: d3, h: 62, max: 1, legend: [['before', 'var(--fsp)'], ['after PSRO', 'var(--def)']]});
-hbars('f-old', [['A1', .24], ['A2', .51], ['A3', .25], ['A4', 0], ['A5 (newest)', 0]].map(([n, v]) => [n, [[v, 'var(--atk)']]]), {fmt: v => v.toFixed(2), h: 32});
-hbars('f-cost', [['PSRO', [[1840, 'var(--def)']]], ['Fictitious', [[2960, 'var(--fsp)']]]], {fmt: v => v.toLocaleString('en-US'), h: 46});
-hbars('f-sub', [['A2', .33], ['A3', .33], ['A4', .023], ['A5', .10]].map(([n, v]) => [n, [[v, 'var(--atk)']]]), {fmt: v => (v * 100).toFixed(v < .1 ? 1 : 0) + '%', h: 34});
-function lines(id, series, lo, hi, ticks, dig, pad = 84) {
-  const svg = $('#' + id), x = i => 46 + i * (284 - pad) / 4 * 1.02, y = v => 178 - (v - lo) / (hi - lo) * 164;
-  ticks.forEach(v => { el('line', {class: 'gl', x1: 38, x2: x(4) + 6, y1: y(v), y2: y(v)}, svg); txt(svg, 32, y(v) + 4, (v < 0 ? '−' : '') + Math.abs(v).toFixed(dig), {'text-anchor': 'end'}); });
-  el('line', {class: 'axl', x1: 38, x2: x(4) + 6, y1: 178, y2: 178}, svg);
-  [1,2,3,4,5].forEach((g, i) => txt(svg, x(i), 193, g, {'text-anchor': 'middle'})); txt(svg, x(2), 209, 'generation', {'text-anchor': 'middle', class: 'ink'});
-  series.forEach(([n, c, v, tc]) => {
-    el('polyline', {points: v.map((u, i) => `${x(i)},${y(u)}`).join(' '), style: `fill:none;stroke:${c};stroke-width:2.2`}, svg);
-    v.forEach((u, i) => el('circle', {cx: x(i), cy: y(u), r: 3, style: `fill:${c}`}, svg));
-    if (n) txt(svg, x(4) + 10, y(v[4]) + 4, n, {class: 'b', style: `fill:${tc || c}`});
-  });
+function sketch(id, note, series, lo, hi) {
+  const svg = $('#' + id), x = i => 14 + i * 46, y = v => 120 - (v - lo) / (hi - lo) * 98;
+  txt(svg, 4, 12, note); el('line', {class: 'axl', x1: 4, x2: 208, y1: 128, y2: 128}, svg); txt(svg, 4, 144, 'round 1 → 5');
+  series.forEach(([n, c, v, tc]) => { el('polyline', {points: v.map((u, i) => `${x(i)},${y(u)}`).join(' '), style: `fill:none;stroke:${c};stroke-width:2.4;stroke-linejoin:round`}, svg);
+    el('circle', {cx: x(v.length - 1), cy: y(v[v.length - 1]), r: 4, style: `fill:${c}`}, svg);
+    if (n) txt(svg, x(4) + 10, y(v[4]) + 4, n, {class: 'b', style: `fill:${tc || c}`}); });
 }
-lines('f-round', [['PSRO', 'var(--psro)', [1.660, 1.701, 1.779, 1.755, 1.806]], ['Fictitious', 'var(--fsp)', [1.707, 1.708, 1.615, 1.596, 1.698], 'var(--muted)'],
-  ['Naive', 'var(--naive)', [1.585, 1.531, 1.643, 1.546, 1.524], 'var(--atk-ink)']], 1.48, 1.84, [1.5, 1.6, 1.7, 1.8], 1);
-lines('f-unseen', [['', 'var(--atk)', [-.28, -.59, -.60, -.68, -.70]]], -.8, -.2, [-.8, -.6, -.4, -.2], 1, 30);
-{ const svg = $('#f-fresh'), x1 = 120, x2 = 290, y = v => 158 - (v - .7) / .3 * 144;
-  [.7, .8, .9, 1.0].forEach(v => { el('line', {class: v === .7 ? 'axl' : 'gl', x1: 70, x2: 340, y1: y(v), y2: y(v)}, svg); txt(svg, 62, y(v) + 4, v.toFixed(1), {'text-anchor': 'end'}); });
-  txt(svg, x1, 174, '1', {'text-anchor': 'middle'}); txt(svg, x2, 174, '2', {'text-anchor': 'middle'}); txt(svg, 205, 191, 'generation', {'text-anchor': 'middle', class: 'ink'});
-  txt(svg, 28, 86, 'Safety', {class: 'ink', 'text-anchor': 'middle', transform: 'rotate(-90 28 86)'});
-  [['var(--psro)', .900, .965, 'Cold start (PSRO)', 'var(--psro)'], ['var(--atk)', .933, .752, 'Warm start', 'var(--atk-ink)']].forEach(([c, a, b, n, t]) => {
+sketch('f-round', '↑ safe and helpful overall', [['Ours', 'var(--psro)', [1.660, 1.701, 1.779, 1.755, 1.806]], ['Equal weight', 'var(--fsp)', [1.707, 1.708, 1.615, 1.596, 1.698], 'var(--muted)'],
+  ['Newest only', 'var(--naive)', [1.585, 1.531, 1.643, 1.546, 1.524], 'var(--atk-ink)']], 1.50, 1.82);
+sketch('f-unseen', '↑ how well the best attacker does', [['', 'var(--atk)', [-.28, -.59, -.60, -.68, -.70]]], -.74, -.26);
+bars('f-old', [['Attacker 1', .24, 'var(--atk)'], ['Attacker 2', .51, 'var(--atk)'], ['Attacker 3', .25, 'var(--atk)'], ['Attacker 4', 0], ['Attacker 5 (newest)', 0]], {h: 25, note: 'weight as a training opponent →'});
+bars('f-cost', [['Ours', 1840, 'var(--def)'], ['Equal weight', 2960, 'var(--fsp)']], {h: 36, note: 'training steps →'});
+bars('f-sub', [['Attacker 2', .33, 'var(--atk)'], ['Attacker 3', .33, 'var(--atk)'], ['Attacker 4', .023, 'var(--atk)'], ['Attacker 5', .10, 'var(--atk)']], {h: 25, note: 'requests swapped for easier ones →'});
+bars('f-judge', [['Training judge', .062, .031], ['StrongREJECT', .054, .029], ['HarmBench', .049, .028], ['Gemini', .026, .016]].map(([n, a, b]) => [n, [[a, 'var(--fsp)'], [b, 'var(--def)']]]), {h: 31, legend: [['equal weight', 'var(--fsp)'], ['ours', 'var(--def)']]});
+txt($('#f-judge'), 114, 4 + 4 * 31 + 16, 'harmful answers', {'text-anchor': 'end'});
+bars('f-dan', [['Newest only', .630, 'var(--naive)'], ['Equal weight', .130, 'var(--fsp)'], ['Ours', .053, 'var(--def)']], {note: 'jailbreaks that work →'});
+bars('f-models', [['Llama', [[.356, 'var(--fsp)'], [.955, 'var(--def)']]], ['Qwen', [[.429, 'var(--fsp)'], [.983, 'var(--def)']]]], {h: 46, legend: [['before', 'var(--fsp)'], ['after', 'var(--def)']]});
+txt($('#f-models'), 114, 4 + 2 * 46 + 16, 'safety', {'text-anchor': 'end'});
+{ const svg = $('#f-fresh'), x1 = 24, x2 = 138, y = v => 118 - (v - .7) / .3 * 98;
+  txt(svg, 4, 12, '↑ safety'); el('line', {class: 'axl', x1: 4, x2: 208, y1: 128, y2: 128}, svg); txt(svg, 8, 144, 'round 1'); txt(svg, x2 - 18, 144, 'round 2');
+  [['var(--psro)', .900, .965, 'Start fresh', 'var(--psro)'], ['var(--atk)', .933, .752, 'Keep training', 'var(--atk-ink)']].forEach(([c, a, b, n, k]) => {
     el('line', {x1, y1: y(a), x2, y2: y(b), style: `stroke:${c};stroke-width:2.4`}, svg);
     [[x1, a], [x2, b]].forEach(([p, v]) => el('circle', {cx: p, cy: y(v), r: 4, style: `fill:${c}`}, svg));
-    txt(svg, x2 + 56, y(b) + 4, n, {class: 'b', style: `fill:${t}`}); });
-  el('line', {x1: x2, y1: y(.752) + 5, x2, y2: 154, style: 'stroke:var(--atk);stroke-width:2;stroke-dasharray:3 3'}, svg);
-  txt(svg, x2 + 56, y(.752) + 19, 'then collapses: empty answers', {style: 'fill:var(--atk-ink)'}); }
+    txt(svg, x2 + 12, y(b) + 2, n, {class: 'b', style: `fill:${k}`}); });
+  el('line', {x1: x2, y1: y(.752) + 5, x2, y2: 125, style: 'stroke:var(--atk);stroke-width:2;stroke-dasharray:3 3'}, svg);
+  txt(svg, x2 + 12, y(.752) + 16, 'then empty answers', {style: 'fill:var(--atk-ink)'}); }
 
 $('#copy').addEventListener('click', e => {
   navigator.clipboard.writeText($('#bib').textContent).then(() => { e.target.textContent = 'Copied'; })
