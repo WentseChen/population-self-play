@@ -11,735 +11,478 @@
 <meta name="twitter:card" content="summary_large_image">
 <style>html{-webkit-text-size-adjust:100%}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
 <title>Population-Based Self-Play</title>
-<meta name="description" content="Population-based self-play (PSRO) for LLM jailbreak safety: a defender trained against the Nash mixture of a growing attacker population.">
+<meta name="description" content="Population-based self-play (PSRO) for LLM safety training: one defender trained against the Nash mixture of a growing attacker population.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <style>
-/* Layout: one reading column. The hero replays PSRO generation by generation (payoff matrix + safety/helpful trade-off);
-   the motivation figure is split into three animated panels. */
+/* Layout: a paper on the web. One 780px column, numbered sections, numbered figures and tables with captions. */
 :root {
-  --paper: #ffffff;
-  --ink: #1d232b;
-  --muted: #6b7480;
-  --rule: #e1e4e8;
-  --panel: #ffffff;
-  --mid: #ecedef;
-  --atk: #e8916c;      /* attacker fill (GIF) */
-  --atk-ink: #b9603b;  /* attacker text, darker for contrast */
-  --atk-soft: #fadfd3;
-  --def: #6e9bcb;      /* defender fill (GIF) */
-  --psro: #3e6fa8;     /* defender / ours: lines and text (GIF edge) */
-  --def-soft: #dce8f4;
-  --fsp: #a3abb4;      /* other methods stay neutral */
-  --naive: #c08a63;
-  --up: #4f8a63;
-  --down: #b9603b;
+  --paper: #ffffff; --ink: #1d232b; --muted: #5f6975; --rule: #dfe3e8; --mid: #ecedef;
+  --atk: #e8916c; --atk-ink: #b0562f; --atk-soft: #fadfd3;      /* attacker */
+  --def: #6e9bcb; --psro: #3e6fa8; --def-soft: #dce8f4;         /* defender, ours */
+  --fsp: #9aa3ad; --naive: #c08a63;                             /* other methods */
   --serif: "Source Serif 4", Georgia, "Times New Roman", serif;
   --sans: "IBM Plex Sans", -apple-system, "Segoe UI", sans-serif;
-  --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  color-scheme: light;
 }
-
-:root { color-scheme: light; }
-body { background: var(--paper); color: var(--ink); font: 16px/1.6 var(--sans); }
-.wrap { max-width: 1040px; margin: 0 auto; padding-block: 48px 72px;
+body { background: var(--paper); color: var(--ink); font: 17px/1.65 var(--serif); }
+.wrap { max-width: 780px; margin: 0 auto; padding-block: 56px 72px;
   padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
-h1, h2, h3 { font-family: var(--serif); text-wrap: balance; line-height: 1.2; margin: 0; }
-h1 { font-size: clamp(2rem, 5vw, 3.1rem); font-weight: 700; letter-spacing: -0.01em; }
-h2 { font-size: 1.6rem; font-weight: 600; }
-h3 { font-size: 1.12rem; font-weight: 600; }
 p { margin: 0; }
-.prose { max-width: 66ch; }
-.eyebrow { font: 500 0.75rem/1 var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
-section { display: grid; gap: 20px; padding-block: 44px; border-top: 1px solid var(--rule); }
-a { color: var(--psro); }
+a { color: var(--psro); text-decoration-thickness: 1px; text-underline-offset: 2px; }
 a:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid var(--psro); outline-offset: 2px; }
-.note { font-size: 0.85rem; color: var(--muted); }
-.mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+h1, h2, h3 { font-family: var(--serif); text-wrap: balance; line-height: 1.25; margin: 0; }
+h1 { font-size: clamp(1.8rem, 5vw, 2.5rem); font-weight: 700; }
+h2 { font-size: 1.5rem; font-weight: 700; }
+h3 { font-size: 1.15rem; font-weight: 600; }
+h2 .n, h3 .n { color: var(--muted); font-weight: 400; margin-right: .55em; }
 
-header { display: grid; gap: 18px; padding-bottom: 32px; }
-.authors { color: var(--ink); font-size: 1rem; }
+header { display: grid; gap: 16px; justify-items: center; text-align: center; padding-bottom: 28px; }
+.authors { font: 1.05rem/1.7 var(--sans); }
+.authors a, .affil span { white-space: nowrap; }
 .authors a { color: inherit; text-decoration: none; border-bottom: 1px solid var(--rule); }
 .authors a:hover { border-bottom-color: var(--ink); }
-.authors small { color: var(--muted); font-size: 0.86rem; line-height: 1.7; }
-.links { display: flex; flex-wrap: wrap; gap: 10px; }
-.links a { display: inline-flex; align-items: center; padding: 8px 16px; border: 1px solid var(--ink);
-  border-radius: 999px; color: var(--ink); text-decoration: none; font-weight: 500; font-size: 0.95rem; }
+.affil { font: 0.88rem/1.7 var(--sans); color: var(--muted); }
+sup { line-height: 0; font-size: .7em; }
+.links { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; font-family: var(--sans); }
+.links a, .links span { padding: 6px 18px; border: 1px solid var(--ink); border-radius: 999px; font-size: .92rem; font-weight: 500; text-decoration: none; color: var(--ink); }
+.links span { border-color: var(--rule); color: var(--muted); }
 .links a:hover { background: var(--ink); color: var(--paper); }
-.tldr { font-family: var(--serif); font-size: 1.28rem; line-height: 1.5; max-width: 62ch; }
-.tldr b { color: var(--psro); font-weight: 600; }
+.tldr { max-width: 64ch; }
+.tldr b { font-weight: 700; }
 
-/* shared player controls */
-.controls { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
-.play { display: inline-flex; align-items: center; gap: 8px; font: 500 0.9rem var(--sans); padding: 7px 16px;
-  border-radius: 999px; border: 1px solid var(--ink); background: var(--ink); color: var(--paper); cursor: pointer; }
-.play.paused { background: transparent; color: var(--ink); }
-.genctl { display: flex; align-items: center; gap: 10px; flex: 1 1 260px; min-width: 0; }
-.genctl label { font-weight: 600; white-space: nowrap; }
-.genctl input { flex: 1; min-width: 0; accent-color: var(--psro); }
+section { display: grid; gap: 18px; padding-top: 40px; min-width: 0; }
+section > * { min-width: 0; }
+.sub { display: grid; gap: 16px; padding-top: 14px; min-width: 0; }
+.abstract { max-width: 700px; margin: 0 auto; font-size: 1rem; }
+.abstract h2 { text-align: center; font-size: 1.15rem; margin-bottom: 10px; }
+.eq { display: block; text-align: center; overflow-x: auto; padding-block: 2px; font-size: 1.08rem; }
+math { font-family: "Latin Modern Math", "STIX Two Math", "Cambria Math", math; }
+ol { margin: 0; padding-left: 1.4em; display: grid; gap: 8px; }
+.question { font-style: italic; }
 
-/* hero: PSRO replay */
-.stage { display: grid; gap: 18px; background: var(--panel); border: 1px solid var(--rule); border-radius: 6px; padding: 22px; }
-@media (max-width: 600px) { .stage { padding: 14px; } }
-.hero-grid { display: grid; grid-template-columns: minmax(0, auto) minmax(0, 1fr); gap: 32px; align-items: start; }
-@media (max-width: 760px) { .hero-grid { grid-template-columns: 1fr; gap: 20px; } }
-.pool-label { font: 0.74rem var(--mono); color: var(--muted); }
-.scores { display: grid; grid-template-columns: repeat(2, minmax(0, max-content)); gap: 32px; align-items: end; }
-.score { display: grid; gap: 0; }
-.score b { font: 600 2.1rem/1.1 var(--mono); font-variant-numeric: tabular-nums; }
-.score span { font-size: 0.8rem; color: var(--muted); }
-.delta { font: 500 0.8rem var(--mono); min-height: 1.3em; white-space: nowrap; }
-#stage .hide { visibility: hidden; }
-.delta.up { color: var(--up) !important; } .delta.down { color: var(--down) !important; }
-svg.trade { width: 100%; max-width: 400px; height: auto; display: block; }
-svg text { font-family: var(--mono); font-size: 9px; fill: var(--muted); }
-svg .ax { stroke: var(--ink); stroke-width: 1.4; }
-svg .axt { font-family: var(--sans); font-size: 13px; font-weight: 600; fill: var(--ink); }
-svg .better { font-family: var(--sans); font-size: 11px; font-weight: 500; fill: var(--up); }
-.trade .tseg { stroke: var(--psro); stroke-width: 1.8; marker-end: url(#tarrow); opacity: .7; }
-.trade .tp { fill: var(--psro); opacity: .55; }
-.trade .tp.cur { opacity: 1; stroke: var(--panel); stroke-width: 2.5; }
-.trade .plab, .cyc .plab { fill: var(--ink); font-size: 11px; font-weight: 500; }
+figure { margin: 10px 0 6px; display: grid; gap: 12px; min-width: 0; }
+figcaption, .cap { font: 0.88rem/1.55 var(--sans); color: var(--muted); text-align: left; }
+figcaption b, .cap b { color: var(--ink); font-weight: 600; }
+figure img { width: 100%; height: auto; display: block; }
+.frame { border: 1px solid var(--rule); border-radius: 4px; padding: 18px; display: grid; gap: 16px; min-width: 0; }
+@media (max-width: 560px) { .frame { padding: 12px; } }
+.two { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px; align-items: start; }
+@media (max-width: 620px) { .two { grid-template-columns: 1fr; gap: 20px; } }
+.panel { display: grid; gap: 6px; min-width: 0; }
+.ptitle { font: 600 0.86rem/1.4 var(--sans); }
+svg { width: 100%; height: auto; display: block; overflow: visible; }
+svg text { font-family: var(--sans); font-size: 11px; fill: var(--muted); }
+svg text.ink { fill: var(--ink); }
+svg .b { font-weight: 600; }
+.axl { stroke: var(--ink); stroke-width: 1.2; }
+.gl { stroke: var(--rule); stroke-width: 1; }
+svg text.axt { font-size: 12.5px; font-weight: 600; fill: var(--ink); }
+svg text.better { fill: #4f8a63; }
 
-/* PSRO matrix strip */
-.matrix-scroll { overflow-x: auto; min-width: 0; }
-table.m { border-collapse: separate; border-spacing: 3px; font: 500 0.78rem var(--mono); font-variant-numeric: tabular-nums; }
-table.m th { font-weight: 500; color: var(--muted); padding: 2px 5px; }
-table.m th.d { color: var(--psro); } table.m th.a { color: var(--atk-ink); }
-table.m td { width: 50px; height: 34px; text-align: center; border-radius: 3px; outline: 2px solid transparent; outline-offset: -2px; animation: pop .35s ease; }
-table.m td.nash { outline-color: var(--ink); }
-@keyframes pop { from { transform: scale(.6); opacity: 0; } to { transform: none; opacity: 1; } }
-.mixrow { display: grid; grid-template-columns: 28px minmax(0, 1fr) 38px; gap: 8px; align-items: center; font: 0.8rem var(--mono); }
-.bar { height: 9px; background: var(--mid); border-radius: 2px; overflow: hidden; }
+.controls { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; font-family: var(--sans); }
+.btn { font: 500 0.84rem var(--sans); padding: 5px 14px; border-radius: 999px; border: 1px solid var(--rule); background: var(--paper); color: var(--ink); cursor: pointer; }
+.gen { display: flex; align-items: center; gap: 10px; flex: 1 1 220px; min-width: 0; font-size: .9rem; }
+.gen label { font-weight: 600; white-space: nowrap; }
+.gen input { flex: 1; min-width: 0; accent-color: var(--psro); }
+.replay { display: grid; grid-template-columns: minmax(0, auto) minmax(0, 1fr); gap: 28px; align-items: start; }
+@media (max-width: 700px) { .replay { grid-template-columns: 1fr; gap: 18px; } }
+.scroll { overflow-x: auto; min-width: 0; }
+table.m { border-collapse: separate; border-spacing: 3px; font: 500 0.76rem var(--sans); font-variant-numeric: tabular-nums; }
+table.m th { font-weight: 500; padding: 1px 4px; } table.m th.d { color: var(--psro); } table.m th.a { color: var(--atk-ink); }
+table.m td { width: 45px; height: 31px; text-align: center; border-radius: 2px; outline: 2px solid transparent; outline-offset: -2px; }
+table.m td.nash { outline-color: var(--ink); } table.m td.fresh { animation: pop .35s ease; }
+@keyframes pop { from { opacity: .2; transform: scale(.7); } to { opacity: 1; transform: none; } }
+#fig1 .hide { visibility: hidden; }
+.key { display: flex; gap: 6px 14px; flex-wrap: wrap; font: 0.78rem var(--sans); color: var(--muted); }
+.key i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; }
+.mixrow { display: grid; grid-template-columns: 26px minmax(0, 1fr) 36px; gap: 8px; align-items: center; font: 0.78rem var(--sans); font-variant-numeric: tabular-nums; }
+.bar { height: 8px; background: var(--mid); border-radius: 2px; overflow: hidden; }
 .bar span { display: block; height: 100%; background: var(--def); transition: width .4s; }
-.side { display: grid; gap: 12px; min-width: 0; }
-.legend { display: flex; gap: 12px; flex-wrap: wrap; font-size: 0.78rem; color: var(--muted); }
-.legend i { display: inline-block; width: 11px; height: 11px; border-radius: 2px; vertical-align: -1px; margin-right: 4px; }
-
-/* stats */
-.stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; }
-@media (max-width: 680px) { .stats { grid-template-columns: 1fr; } }
-.stat { display: grid; gap: 4px; align-content: start; }
-.stat b { font: 600 2.2rem/1.1 var(--serif); }
-.stat span { color: var(--muted); font-size: 0.92rem; }
-
-/* motivation panels */
-.panel { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); gap: 32px; align-items: center; padding-block: 18px; }
-@media (max-width: 760px) { .panel { grid-template-columns: 1fr; gap: 16px; } }
-/* the two problems: one figure, one text */
-.twin { display: grid; gap: 14px; padding-block: 12px; }
-.twin .viz-head h3 { font-size: 1.12rem; }
-.twin-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px; max-width: 760px; }
-@media (max-width: 620px) { .twin-grid { grid-template-columns: 1fr; gap: 18px; } }
-.twin svg { width: 100%; max-width: 360px; height: auto; display: block; margin-top: 6px; }
-.cyc .iso { stroke: var(--muted); stroke-dasharray: 4 4; }
-.cyc .seg.ours { stroke: var(--psro); marker-end: url(#arrow2); }
-.cyc .p.ours { fill: var(--psro); }
-#arrow2 path { fill: var(--psro); }
-.cyc .sname { font-family: var(--sans); font-size: 12px; font-weight: 600; }
-.panel-text { display: grid; gap: 10px; min-width: 0; }
-.tag { font: 600 0.8rem var(--mono); color: var(--muted); }
-.viz { background: var(--panel); border: 1px solid var(--rule); border-radius: 6px; padding: 18px; display: grid; gap: 12px; min-width: 0; }
-.viz-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
-.replay { font: 500 0.8rem var(--sans); padding: 5px 12px; border-radius: 999px; border: 1px solid var(--rule); background: var(--panel); color: var(--ink); cursor: pointer; }
-.big { font: 600 1.9rem/1 var(--mono); font-variant-numeric: tabular-nums; }
 
 .board { display: grid; grid-template-columns: repeat(25, minmax(0, 1fr)); gap: 3px; }
-.board i { aspect-ratio: 1; border-radius: 50%; background: var(--mid); transition: background .35s, transform .35s; max-width: 100%; }
-.board i.on { background: color-mix(in srgb, var(--atk) 38%, var(--panel)); }
-.board i.new { background: var(--atk); transform: scale(1.15); }
-.board i.dup { background: color-mix(in srgb, var(--atk) 38%, var(--panel)); box-shadow: inset 0 0 0 2px var(--ink); }
-.dot-key { display: flex; gap: 14px; flex-wrap: wrap; font-size: 0.78rem; color: var(--muted); }
-.dot-key i { display: inline-block; width: 11px; height: 11px; border-radius: 50%; vertical-align: -1px; margin-right: 5px; }
-/* featured pool@k */
-/* motivation: goal callout and closing question, as in the paper */
-.callout { font: 1.1rem/1.6 var(--serif); max-width: 70ch; padding: 16px 20px; background: var(--def-soft); border-radius: 6px; }
-.callout b { color: var(--psro); }
-.question { font: italic 1.2rem/1.55 var(--serif); max-width: 62ch; padding-top: 8px; }
-.bridge { display: grid; gap: 14px; padding-block: 8px 18px; }
-.flow { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(0, 1.25fr); gap: 12px; align-items: stretch; }
-@media (max-width: 760px) { .flow { grid-template-columns: 1fr; } .flow .arrow { transform: rotate(90deg); justify-self: center; } }
-.step { display: grid; gap: 6px; align-content: start; padding: 14px 16px; border: 1px solid var(--rule); border-radius: 6px; background: var(--panel); }
-.step b { font: 600 1rem/1.3 var(--serif); }
-.step span { font-size: 0.9rem; color: var(--muted); }
-.step.key { background: var(--def-soft); border-color: var(--def); }
-.flow .arrow { align-self: center; color: var(--muted); font-size: 1.3rem; }
-.closing { font: 1.08rem/1.6 var(--serif); }
-.feature-grid { display: grid; grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr); gap: 32px; align-items: start; }
-@media (max-width: 760px) { .feature-grid { grid-template-columns: 1fr; gap: 18px; } }
-.def { font: 1.05rem/1.55 var(--serif); padding: 14px 16px; background: var(--panel); border: 1px solid var(--rule); border-radius: 4px; }
-.def .mono { font-weight: 600; color: var(--atk-ink); }
-.huge { font: 700 4.2rem/1 var(--serif); color: var(--atk-ink); font-variant-numeric: tabular-nums; }
-svg.curve { width: 100%; height: auto; display: block; }
-.pa-row { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 16px; align-items: center; }
-@media (max-width: 480px) { .pa-row { grid-template-columns: 1fr; } }
-.curve .ln { fill: none; stroke: var(--atk); stroke-width: 2; }
-.curve .pt { fill: var(--atk); }
-.curve .base { stroke: var(--muted); stroke-dasharray: 4 3; stroke-width: 1; }
-.curve .area { fill: var(--atk); opacity: .12; }
+.board i { aspect-ratio: 1; border-radius: 50%; background: var(--mid); transition: background .35s; max-width: 100%; }
+.board i.on { background: color-mix(in srgb, var(--atk) 38%, white); }
+.board i.new { background: var(--atk); }
+.board i.dup { background: color-mix(in srgb, var(--atk) 38%, white); box-shadow: inset 0 0 0 1.6px var(--ink); }
+.key.round i { border-radius: 50%; }
 
-.ent .strat { stroke: var(--atk); } .ent .tok { stroke: var(--psro); }
-.ent path { fill: none; stroke-width: 2.4; }
-.ent .one { stroke: var(--rule); stroke-dasharray: 3 3; }
-.lab-s { fill: var(--atk-ink) !important; font-weight: 500; } .lab-t { fill: var(--psro) !important; font-weight: 500; }
-svg .lbl { font-size: 11px; }
-
-.cyc .seg { stroke: var(--naive); stroke-width: 1.8; fill: none; marker-end: url(#arrow); }
-.cyc .p { fill: var(--naive); }
-.cyc .plab { fill: var(--ink); font-size: 11px; font-weight: 500; }
-#arrow path { fill: var(--naive); }
-
-figure { margin: 0; display: grid; gap: 10px; }
-figure img { width: 100%; height: auto; background: #fff; border: 1px solid var(--rule); border-radius: 4px; padding: 8px; box-sizing: border-box; }
-ol.steps { margin: 0; padding-left: 1.3em; display: grid; gap: 8px; max-width: 66ch; }
-
-.chart { display: grid; gap: 10px; }
-.crow { display: grid; grid-template-columns: 170px minmax(0, 1fr); gap: 12px; align-items: center; }
-@media (max-width: 560px) { .crow { grid-template-columns: 1fr; gap: 4px; } }
-.cname { font-size: 0.9rem; }
-.cname.ours { font-weight: 600; color: var(--psro); }
-.cbars { display: grid; gap: 3px; }
-.cbar { display: grid; grid-template-columns: minmax(0, 1fr) 46px; gap: 8px; align-items: center; font: 0.78rem var(--mono); font-variant-numeric: tabular-nums; }
-.track { position: relative; height: 12px; background: var(--mid); border-radius: 2px; }
-.track span { position: absolute; inset: 0 auto 0 0; border-radius: 2px; }
-.s span { background: var(--psro); } .h span { background: var(--muted); opacity: .55; }
-/* results table */
-.tbl-wrap { overflow-x: auto; }
-table.res { width: 100%; max-width: 640px; border-collapse: collapse; font-size: 0.95rem; }
-table.res th, table.res td { padding: 9px 12px; text-align: right; border-bottom: 1px solid var(--rule); }
+.tbl { overflow-x: auto; }
+table.res { border-collapse: collapse; width: 100%; font: 0.88rem/1.4 var(--sans); font-variant-numeric: tabular-nums; border-top: 2px solid var(--ink); border-bottom: 2px solid var(--ink); }
+table.res th, table.res td { padding: 6px 8px; text-align: right; white-space: nowrap; }
 table.res th:first-child, table.res td:first-child { text-align: left; }
-table.res thead th { font: 600 0.8rem var(--sans); color: var(--muted); border-bottom: 2px solid var(--ink); }
-table.res td + td { font-family: var(--mono); font-variant-numeric: tabular-nums; }
-table.res tr.grp th { text-align: left; font: 500 0.72rem var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); padding-top: 16px; border-bottom: 0; }
-table.res tr.ours td { font-weight: 600; color: var(--psro); background: var(--def-soft); }
-table.res tr.ref td { color: var(--muted); }
-.ckey { display: flex; gap: 16px; font-size: 0.8rem; color: var(--muted); }
-.ckey i { display: inline-block; width: 12px; height: 12px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; }
+table.res thead th { font-weight: 600; border-bottom: 1px solid var(--ink); }
+table.res tr.sep td { border-top: 1px solid var(--rule); }
+table.res tr.ours td { background: var(--def-soft); }
+table.res small { color: var(--muted); font-size: .78em; }
 
-/* findings: cards with trend sketches */
-.cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 28px; }
-@media (max-width: 860px) { .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (max-width: 560px) { .cards { grid-template-columns: 1fr; } }
-.card { display: grid; gap: 8px; align-content: start; }
-.card h3 { font-size: 1.12rem; }
-.card p { font-size: 0.93rem; color: var(--muted); }
-.example { display: grid; gap: 7px; align-content: center; min-height: 118px; margin-bottom: 4px; }
-.ex-row { display: grid; grid-template-columns: 52px minmax(0, 1fr); gap: 10px; align-items: center; font-size: 0.86rem; }
-.ex-tag { font: 600 0.72rem var(--mono); text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
-.ex-tag.bad { color: var(--atk-ink); }
-.ex-box { padding: 6px 10px; border: 1px solid var(--rule); border-radius: 4px; }
-.ex-box.bad { border-color: var(--atk); background: var(--atk-soft); color: var(--atk-ink); }
-svg.mini { width: 100%; height: auto; display: block; margin-bottom: 4px; overflow: visible; }
-svg .mlab { font-family: var(--sans); font-size: 11px; fill: var(--ink); }
-svg .mnote { font-family: var(--sans); font-size: 10px; fill: var(--muted); }
-/* findings by research question */
-.rq { display: grid; gap: 14px; padding-top: 22px; border-top: 1px dashed var(--rule); }
-.rq:first-of-type { border-top: 0; padding-top: 4px; }
-.rq-head { display: grid; gap: 4px; }
-.rq-head h3 { font-size: 1.3rem; }
-.answer { font: 500 1rem/1.5 var(--sans); color: var(--psro); }
-.rq-tag { font: 600 0.78rem var(--mono); color: var(--paper); background: var(--ink); padding: 2px 8px; border-radius: 3px; }
-.insights { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 22px 28px; }
-@media (max-width: 820px) { .insights { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (max-width: 540px) { .insights { grid-template-columns: 1fr; } }
-.insight { display: grid; gap: 6px; align-content: start; }
-.insight h4 { margin: 0; font: 600 1.05rem/1.3 var(--serif); color: var(--ink); text-wrap: balance; }
-.insight p { font-size: 0.92rem; color: var(--muted); }
-.insight p b { color: var(--psro); font-weight: 600; font-variant-numeric: tabular-nums; }
-.findings { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
-@media (max-width: 680px) { .findings { grid-template-columns: 1fr; } }
-.finding { display: grid; gap: 8px; align-content: start; }
-
-pre.bib { background: var(--panel); border: 1px solid var(--rule); border-radius: 4px; padding: 16px; overflow-x: auto; font: 0.8rem/1.5 var(--mono); margin: 0; }
+.ex { display: grid; gap: 7px; font: 0.86rem var(--sans); }
+.ex div { display: grid; grid-template-columns: 62px minmax(0, 1fr); gap: 10px; align-items: baseline; }
+.ex span { color: var(--muted); } .ex q { quotes: none; } .ex .bad { color: var(--atk-ink); font-weight: 600; }
+.refs { font: 0.88rem/1.55 var(--sans); padding-left: 1.8em; }
+pre { font: 0.8rem/1.55 ui-monospace, Menlo, monospace; background: #f6f7f9; border: 1px solid var(--rule); border-radius: 4px; padding: 14px; overflow-x: auto; margin: 0; }
 .bibhead { display: flex; justify-content: space-between; align-items: center; }
-footer { color: var(--muted); font-size: 0.85rem; padding-top: 24px; border-top: 1px solid var(--rule); }
-@media (prefers-reduced-motion: reduce) { *, *::before { transition: none !important; animation: none !important; } }
+footer { margin-top: 44px; padding-top: 18px; border-top: 1px solid var(--rule); font: 0.84rem var(--sans); color: var(--muted); }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
 </style>
 
 </head>
 <body>
 <div class="wrap">
-  <header>
-    <h1>Population-Based Self-Play for LLM Safety Training</h1>
-    <p class="authors"><a href="https://wentsechen.github.io/">Wentse Chen</a><sup>1*</sup>, <a href="https://xudongwu-0.github.io/">Xudong Wu</a><sup>2*</sup>, <a href="https://ygan397.github.io/">Yu Gan</a><sup>3</sup>, <a href="https://ericglan.github.io/">Guangchen Lan</a><sup>4</sup>, Zhihan Zhang<sup>5</sup>, <a href="https://sites.google.com/cs.washington.edu/arvind">Arvind Krishnamurthy</a><sup>6</sup>, <a href="https://agentic-intelligence-lab.org/members/jiayu-chen.html">Jiayu Chen</a><sup>2†</sup>, <a href="https://www.cs.cmu.edu/~schneide/">Jeff Schneider</a><sup>1†</sup><br>
-      <small><sup>1</sup>Carnegie Mellon University · <sup>2</sup>University of Hong Kong · <sup>3</sup>Google · <sup>4</sup>Purdue University · <sup>5</sup>Amazon · <sup>6</sup>University of Washington<br>* equal contribution · † equal advising</small></p>
-    <nav class="links">
-      <a href="#" id="paper-link">Paper (arXiv)</a>
-      <a href="https://github.com/WentseChen/psro-llm-safety" id="code-link">Code</a>
-      <a href="#bibtex">BibTeX</a>
-    </nav>
-    <p class="tldr">Self-play against only the latest opponent cycles and forgets. Population-based self-play (PSRO) has been proposed for red-teaming before; we ask <b>what it takes to make it work for LLMs</b>, and <b>what breaks</b> once the population is strong. The resulting defender is the safest among the self-play methods we compare.</p>
-  </header>
+<header>
+  <h1>Population&#8209;Based Self&#8209;Play for LLM Safety Training</h1>
+  <p class="authors"><a href="https://wentsechen.github.io/">Wentse Chen</a><sup>1*</sup>, <a href="https://xudongwu-0.github.io/">Xudong Wu</a><sup>2*</sup>, <a href="https://ygan397.github.io/">Yu Gan</a><sup>3</sup>, <a href="https://ericglan.github.io/">Guangchen Lan</a><sup>4</sup>, Zhihan Zhang<sup>5</sup>, <a href="https://sites.google.com/cs.washington.edu/arvind">Arvind Krishnamurthy</a><sup>6</sup>, <a href="https://agentic-intelligence-lab.org/members/jiayu-chen.html">Jiayu Chen</a><sup>2†</sup>, <a href="https://www.cs.cmu.edu/~schneide/">Jeff Schneider</a><sup>1†</sup></p>
+  <p class="affil"><span><sup>1</sup>Carnegie Mellon University</span> &ensp; <span><sup>2</sup>University of Hong Kong</span> &ensp; <span><sup>3</sup>Google</span> &ensp; <span><sup>4</sup>Purdue University</span> &ensp; <span><sup>5</sup>Amazon</span> &ensp; <span><sup>6</sup>University of Washington</span><br><sup>*</sup>Equal contribution &ensp; <sup>†</sup>Equal advising</p>
+  <nav class="links"><span>arXiv (coming soon)</span><a href="https://github.com/WentseChen/psro-llm-safety">Code</a><a href="#bibtex">BibTeX</a></nav>
+  <p class="tldr"><b>TL;DR</b>&ensp;Independently trained attackers find different jailbreaks, so a population is a stronger opponent than any single attacker. We train one defender against the whole population, and it is the safest among the self-play methods we compare.</p>
+</header>
 
-  <!-- HERO: PSRO, one generation at a time -->
-  <div class="stage" id="stage" aria-label="PSRO training replay">
-    <div class="controls">
-      <button class="play" id="h-play" type="button">▶ Play</button>
-      <div class="genctl">
-        <label for="h-k">Generation <span class="mono" id="h-klab">5</span></label>
-        <input type="range" id="h-k" min="1" max="5" step="1" value="5">
-      </div>
-    </div>
-    <div class="hero-grid">
-      <div class="matrix-scroll">
-        <p class="pool-label" style="margin-bottom:6px">Payoff matrix, attacker's payoff (A<sub>0</sub>, D<sub>0</sub> = base model)</p>
+<figure>
+  <div class="frame" id="fig1">
+    <div class="controls"><button class="btn" id="h-play" type="button">▶ Play</button>
+      <div class="gen"><label for="h-k">Generation <span id="h-klab">5</span></label><input type="range" id="h-k" min="1" max="5" step="1" value="5"></div></div>
+    <div class="replay">
+      <div class="panel scroll">
+        <span class="ptitle">(a) Payoff matrix</span>
         <table class="m" id="matrix"></table>
-        <div class="legend" style="margin-top:8px">
-          <span><i style="background:var(--atk)"></i>attacker wins</span>
-          <span><i style="background:var(--def)"></i>defender wins</span>
-          <span><i style="outline:2px solid var(--ink);outline-offset:-2px"></i>in the Nash defender</span>
-        </div>
-        <div class="side" style="margin-top:14px">
-          <p class="note">Nash defender after D<sub id="h-klab2">5</sub> joins</p>
-          <div id="mix" style="display:grid;gap:6px"></div>
-        </div>
+        <div class="key"><span><i style="background:var(--atk)"></i>attacker wins</span><span><i style="background:var(--def)"></i>defender wins</span><span><i style="outline:2px solid var(--ink);outline-offset:-2px"></i>in the Nash defender</span></div>
+        <div id="mix" style="display:grid;gap:5px;margin-top:6px"></div>
       </div>
-      <div class="side">
-        <div class="scores">
-          <div class="score"><b class="sv" id="t-s" style="color:var(--psro)">0.962</b><span>Safety of D<sub class="kk">5</sub></span><span class="delta" id="t-ds"></span></div>
-          <div class="score"><b class="hv" id="t-h" style="color:var(--atk-ink)">0.844</b><span>Helpful of D<sub class="kk">5</sub></span><span class="delta" id="t-dh"></span></div>
-        </div>
-        <svg class="trade" id="t-svg" viewBox="0 0 340 252" role="img" aria-label="Safety versus helpfulness of each PSRO defender generation"></svg>
-        <p class="note">Each dot is one generation's defender, placed by its safety and helpfulness on held-out benchmarks (one training seed). Up and to the right is better. The comparison with naive self-play below uses the same axes.</p>
-      </div>
+      <div class="panel"><span class="ptitle">(b) Safety and helpfulness of D<sub class="kk">5</sub></span>
+        <svg id="t-svg" viewBox="0 0 340 262" role="img" aria-label="Safety versus helpfulness of each PSRO defender generation"></svg></div>
     </div>
   </div>
+  <figcaption><b>Figure 1: A replay of training.</b> Each generation adds one attacker (row) and one defender (column). (a) The attacker's payoff for every matchup, and the Nash mixture over defenders (bars) that the next attacker trains against. A<sub>0</sub> and D<sub>0</sub> are the base model. (b) Each defender's score on held-out benchmarks, from one training seed; Figure 3b uses the same axes.</figcaption>
+</figure>
 
-  <section>
-    <p class="eyebrow">Motivation</p>
-    <h2>Why train against a population</h2>
-    <p class="prose">In jailbreak self-play, an attacker writes prompts and a defender must answer safely. The space of possible attacks is open-ended, and no training set, benchmark or judge covers more than a small part of it. So any single training run settles on a strategy that fits the part it happened to see: a valid solution, but only one of many.</p>
+<section class="abstract"><div><h2>Abstract</h2><p>While self-play promises an unbounded supply of synthetic data for LLM post-training, standard single-policy methods quickly plateau. In attacker–defender self-play for safety training, we find that independently training the same attacker recipe produces diverse strategies. We measure this with pool@<i>k</i>, the fraction of prompts broken by at least one of <i>k</i> attackers: it reaches 3.4× the single-run value at <i>k</i> = 6 and continues to rise. This makes a population a stronger opponent than any individual attacker. We build on this finding with population-based self-play via Policy-Space Response Oracles: each new attacker or defender starts from the base model and trains against the Nash mixture of the entire opposing population. A single defender can thus learn to resist the population’s strategies while requiring only one model run at inference. To scale population payoff matrix evaluation at 8B parameters, we introduce a racing evaluation budget and a rollout cache. On standard safety benchmarks, our defender achieves 95.5% average safety, outperforming baseline self-play methods (at most 89.0%) at a moderate helpfulness cost.</p></div></section>
 
-    <div class="panel">
-      <div class="panel-text">
-        <span class="tag">A training run is a draw</span>
-        <h3>Every training run is a lottery ticket</h3>
-        <p>We trained the same attacker six times. Same recipe; the runs differ only in which sample of the training corpus they consume. Each run still ended up with different winning strategies: the two strongest break 81 prompts each, yet share only 38. Training once is like drawing one ticket: you get one of many valid outcomes, and which one is luck. We call this <i>partial convergence</i>.</p>
-        <div class="def"><span class="mono">pool@k</span> asks what you win by holding <i>k</i> tickets: the fraction of held-out prompts broken by at least one of <i>k</i> independently trained attackers, each tried once. It is pass@k taken across training runs instead of samples.</div>
-        <div><div class="huge"><span id="a-x">3.4</span>×</div><span class="note">pool@<span id="a-k">6</span> relative to pool@1, and still rising</span></div>
-        <p>Rather than deploying <i>k</i> models, we want one policy that captures this coverage by training against the population.</p>
-      </div>
-      <div class="viz" id="va">
-        <div class="viz-head">
-          <span class="note">Each new attacker is one more draw. Each dot is one of 200 held-out prompts; counts are averaged over every set of <i>k</i> draws.</span>
-          <button class="replay" type="button" data-replay="a">Replay</button>
-        </div>
-        <div class="board" id="board"></div>
-        <div class="dot-key"><span><i style="background:var(--atk)"></i>new from this attacker</span><span><i style="background:color-mix(in srgb, var(--atk) 38%, var(--panel));box-shadow:inset 0 0 0 2px var(--ink)"></i>also broken, already covered</span><span><i style="background:color-mix(in srgb, var(--atk) 38%, var(--panel))"></i>covered earlier</span><span><i style="background:var(--mid)"></i>not broken</span></div>
-        <div class="big"><span id="a-cov">143</span><span class="note"> / 200 broken · <span id="a-new">attacker 6 breaks 42: 11 new, 31 already covered</span></span></div>
-        <svg class="curve" id="a-curve" viewBox="0 0 300 184" role="img" aria-label="pool@k averaged over all subsets, rising from 0.21 at k=1 to 0.715 at k=6"></svg>
-      </div>
-    </div>
-
-
-    <div class="twin">
-      <div class="viz" id="vbc">
-        <div class="viz-head">
-          <h3>A single policy narrows, then forgets</h3>
-          <button class="replay" type="button" data-replay="bc">Replay</button>
-        </div>
-        <div class="twin-grid">
-          <div><span class="note">One attacker as it trains: entropy relative to the start</span>
-            <svg class="ent" id="b-svg" viewBox="0 0 320 244" role="img" aria-label="strategy entropy collapses while token entropy rises"></svg></div>
-          <div><span class="note">Five defender generations on the same axes</span>
-            <svg class="cyc" id="c-svg" viewBox="0 0 320 244" role="img" aria-label="naive self-play slides between safe and helpful; every PSRO generation lies above it"></svg></div>
-        </div>
-      </div>
-      <p class="prose">One policy cannot pick up every strategy by training longer. Reinforcement learning piles probability onto whichever strategy pays most, so an attacker's strategies collapse even as its wording looks more diverse (left). Retraining against only the newest opponent does not help: nothing asks the defender to keep resisting earlier attacks, so naive self-play slides back and forth between refusing broadly and complying broadly. Every PSRO generation stays on the better side of that trade-off (right; dashed line: equal safety plus helpfulness; one seed each).</p>
-    </div>
-
-    <div class="question">Can a single policy, trained against an equilibrium-weighted population, capture that population's coverage? And what does it take to make this work for LLM self-play?</div>
-  </section>
-
-  <section>
-    <p class="eyebrow">Method</p>
-    <h2>PSRO, adapted to language models</h2>
-    <p class="prose">We build on Policy-Space Response Oracles (PSRO; <a href="https://arxiv.org/abs/1711.00832">Lanctot et al., 2017</a>) and its use for red-teaming language models (GRTS; <a href="https://arxiv.org/abs/2310.00322">Ma et al., 2023</a>). What we add is a study of what makes it work at 8B scale: which ingredient matters, why each member must start fresh, how to keep the payoff matrix affordable, and how a strong population exposes flaws in the reward.</p>
+<section>
+  <h2><span class="n">1</span>Why train against a population</h2>
+  <p>In jailbreak self-play, an attacker writes prompts and a defender must answer them safely. The space of attacks is open-ended, and no corpus, benchmark or judge covers more than a small part of it. Any single run therefore settles on a strategy that fits the part it happened to see: a valid solution, but only one of many.</p>
+  <div class="sub">
+    <h3><span class="n">1.1</span>Every training run is a draw</h3>
+    <p>We train six copies of one attacker recipe that differ only in which sample of the training corpus they consume. Their success rates span an order of magnitude, and they succeed on different prompts: the two strongest break 81 of 200 held-out prompts each, yet share only 38. Training once is like drawing one ticket. We call this <i>partial convergence</i>, and measure what <i>k</i> draws cover together:</p>
+    <span class="eq"><math display="block"><mrow><mtext>pool@</mtext><mi>k</mi><mo>=</mo><munder><mi mathvariant="double-struck">E</mi><mrow><mi>S</mi><mo>:</mo><mo>|</mo><mi>S</mi><mo>|</mo><mo>=</mo><mi>k</mi></mrow></munder><mrow><mo>[</mo><munder><mi>Pr</mi><mi>x</mi></munder><mo>(</mo><mtext>some attacker in&nbsp;</mtext><mi>S</mi><mtext>&nbsp;breaks prompt&nbsp;</mtext><mi>x</mi><mo>)</mo><mo>]</mo></mrow></mrow></math></span>
+    <p>This is pass@<i>k</i> taken across training runs instead of samples. At <i>k</i> = 6 it reaches 3.4 times its single-run value and is still rising.</p>
     <figure>
-      <img src="img/psro_loop.gif" alt="Animated PSRO loop: population, payoff matrix, Nash mixture, train a new policy from the base model; six iterations on the real payoff matrix.">
-      <figcaption class="note">Six PSRO iterations on our real payoff matrix, growing from 3×3 to 6×6. Each step: measure the new row or column, solve for the Nash mixtures, train the next policy from the base model against opponents sampled from them.</figcaption>
+      <div class="frame" id="fig2">
+        <div class="controls"><button class="btn" type="button" data-replay="a">Replay</button><span style="font-size:.88rem"><b id="a-cov">143</b> of 200 broken; <span id="a-new"></span></span></div>
+        <div class="two">
+          <div class="panel"><span class="ptitle">(a) Prompts covered by the pool</span><div class="board" id="board"></div>
+            <div class="key round"><span><i style="background:var(--atk)"></i>new</span><span><i style="background:color-mix(in srgb, var(--atk) 38%, white);box-shadow:inset 0 0 0 1.6px var(--ink)"></i>broken again</span><span><i style="background:color-mix(in srgb, var(--atk) 38%, white)"></i>covered earlier</span><span><i style="background:var(--mid)"></i>not broken</span></div></div>
+          <div class="panel"><span class="ptitle">(b) pool@<i>k</i></span><svg id="a-curve" viewBox="0 0 300 190" role="img" aria-label="pool@k rises from 0.21 at k=1 to 0.715 at k=6"></svg></div>
+        </div>
+      </div>
+      <figcaption><b>Figure 2: A population covers more than any single run.</b> Counts are averaged over every set of <i>k</i> attackers. The dots illustrate those averages; which dots light up in a given step is not a record of one particular set.</figcaption>
     </figure>
-    <ol class="steps">
-      <li>Keep every trained attacker and defender frozen in the population.</li>
-      <li>Measure each new member against all members of the other side, which adds one row or column to the payoff matrix.</li>
-      <li>Solve the matrix for Nash mixtures over each population.</li>
-      <li>Train the next policy with REINFORCE on a fresh LoRA from the base model, against opponents sampled from the Nash mixture. Roles alternate.</li>
-    </ol>
-    <p class="prose">The matrix grows quadratically and every cell needs thousands of judged conversations. A racing evaluation budget and a rollout cache cut that cost by about an order of magnitude.</p>
-  </section>
+    <p>Deploying <i>k</i> models would capture this coverage but costs <i>k</i> runs per request. We want one policy that has it, and so we make the population the opponent.</p>
+  </div>
+  <div class="sub">
+    <h3><span class="n">1.2</span>A single policy narrows, then forgets</h3>
+    <p>Training one policy for longer does not collect these strategies. Reinforcement learning concentrates on whichever strategy pays most, so an attacker's strategies collapse while its wording becomes more varied, and a token-level diversity monitor reads the opposite of what is happening (Figure 3a). Retraining against only the newest opponent does not help either. Nothing asks the defender to keep resisting earlier attacks, and it slides between refusing broadly and complying broadly (Figure 3b).</p>
+    <figure>
+      <div class="frame" id="fig3">
+        <div class="controls"><button class="btn" type="button" data-replay="bc">Replay</button></div>
+        <div class="two">
+          <div class="panel"><span class="ptitle">(a) One attacker as it trains</span><svg id="b-svg" viewBox="0 0 330 250" role="img" aria-label="strategy entropy collapses while token entropy rises"></svg></div>
+          <div class="panel"><span class="ptitle">(b) Five defender generations</span><svg id="c-svg" viewBox="0 0 330 250" role="img" aria-label="naive self-play slides between safe and helpful; every PSRO generation lies above it"></svg></div>
+        </div>
+      </div>
+      <figcaption><b>Figure 3: Two limits of a single policy.</b> (a) Entropy over attack strategies and over tokens, relative to the first checkpoint. (b) Naive self-play and PSRO on the same axes, one seed each. Points on the dashed line have equal safety plus helpfulness; every PSRO generation lies above it and every naive generation below.</figcaption>
+    </figure>
+    <p class="question">Can a single policy trained against an equilibrium-weighted population capture that population's coverage, and what does it take to make this work for LLM self-play?</p>
+  </div>
+</section>
 
-  <section>
-    <p class="eyebrow">Results</p>
-    <h2>Safer than every other self-play method</h2>
-    <p class="prose">Every method starts from an abliterated Llama-3.1-8B-Instruct, whose safety training has been removed. PSRO ends up the safest, at a moderate helpfulness cost.</p>
-    <div class="tbl-wrap"><table class="res">
-      <thead><tr><th>Method</th><th>Safety ↑</th><th>Helpful ↑</th></tr></thead>
+<section>
+  <h2><span class="n">2</span>Method</h2>
+  <p>We build on Policy-Space Response Oracles (PSRO) <a href="#r1">[1]</a> and its use for red-teaming language models in GRTS <a href="#r2">[2]</a>. Keep every trained attacker <i>A<sub>i</sub></i> and defender <i>D<sub>j</sub></i> frozen, and let <i>M<sub>ij</sub></i> = <i>u</i>(<i>A<sub>i</sub></i>, <i>D<sub>j</sub></i>) be the attacker's measured payoff; the defender receives its negative. Each iteration solves this zero-sum game for a mixture over each side,</p>
+  <span class="eq"><math display="block"><mrow><mi>p</mi><mo>∈</mo><munder><mi>arg max</mi><mi>p</mi></munder><mspace width=".15em"></mspace><munder><mi>min</mi><mi>j</mi></munder><mspace width=".15em"></mspace><msub><mrow><mo>(</mo><msup><mi>p</mi><mo>⊤</mo></msup><mi>M</mi><mo>)</mo></mrow><mi>j</mi></msub><mo>,</mo><mspace width="1.6em"></mspace><mi>q</mi><mo>∈</mo><munder><mi>arg min</mi><mi>q</mi></munder><mspace width=".15em"></mspace><munder><mi>max</mi><mi>i</mi></munder><mspace width=".15em"></mspace><msub><mrow><mo>(</mo><mi>M</mi><mi>q</mi><mo>)</mo></mrow><mi>i</mi></msub><mo>,</mo></mrow></math></span>
+  <p>and trains one new member against the other side's mixture:</p>
+  <span class="eq"><math display="block"><mrow><msub><mi>A</mi><mtext>new</mtext></msub><mo>≈</mo><munder><mi>arg max</mi><mi>A</mi></munder><mspace width=".15em"></mspace><munder><mi mathvariant="double-struck">E</mi><mrow><mi>j</mi><mo>∼</mo><mi>q</mi></mrow></munder><mo>[</mo><mi>u</mi><mo>(</mo><mi>A</mi><mo>,</mo><msub><mi>D</mi><mi>j</mi></msub><mo>)</mo><mo>]</mo><mo>,</mo><mspace width="1.6em"></mspace><msub><mi>D</mi><mtext>new</mtext></msub><mo>≈</mo><munder><mi>arg min</mi><mi>D</mi></munder><mspace width=".15em"></mspace><munder><mi mathvariant="double-struck">E</mi><mrow><mi>i</mi><mo>∼</mo><mi>p</mi></mrow></munder><mo>[</mo><mi>u</mi><mo>(</mo><msub><mi>A</mi><mi>i</mi></msub><mo>,</mo><mi>D</mi><mo>)</mo><mo>]</mo><mo>.</mo></mrow></math></span>
+  <p>Every new member is a fresh LoRA adapter on the base model, trained with REINFORCE. The matrix grows quadratically and each cell needs thousands of judged conversations, so we spend fewer episodes on matchups whose value is already clear (a racing budget) and never replay a finished one (a rollout cache).</p>
+  <figure>
+    <img src="img/psro_loop.gif" alt="Animated PSRO loop: population, payoff matrix, Nash mixture, and training a new member from the base model">
+    <figcaption><b>Figure 4: The PSRO loop,</b> shown for six iterations on our measured payoff matrix. Opponent draws are illustrative.</figcaption>
+  </figure>
+</section>
+
+<section>
+  <h2><span class="n">3</span>Experiments</h2>
+  <p>All Llama runs start from an abliterated Llama-3.1-8B-Instruct, whose refusal behaviour has been largely removed. <i>Safety</i> averages seven measures on harmful prompts; <i>Helpful</i> averages compliance on two sets of benign prompts. Naive self-play trains against the latest opponent only, and fictitious self-play <a href="#r3">[3]</a> keeps a population but weights it uniformly. Both, and PSRO, are reported at their fifth generation.</p>
+  <div class="sub">
+    <h3><span class="n">3.1</span>The safest defender among the self-play methods we compare</h3>
+    <p>The two population methods are clearly safer than the single-policy ones, and the gap is widest on role-play jailbreaks (Do Anything Now). Between the two, PSRO is safer and fictitious self-play slightly more helpful.</p>
+    <p class="cap"><b>Table 1: Main comparison.</b> Average safety and helpfulness (↑), and attack success rate on three jailbreak benchmarks (↓). ± marks standard deviations over two seeds; the other rows are single runs. Bold marks the best value in each column.</p>
+    <div class="tbl"><table class="res">
+      <thead><tr><th>Method</th><th>Safety ↑</th><th>Helpful ↑</th><th>WildJailbreak ↓</th><th>DAN ↓</th><th>HarmBench ↓</th></tr></thead>
       <tbody>
-        <tr class="grp"><th colspan="3">Starting point</th></tr>
-        <tr class=""><td>Abliterated Llama-3.1-8B-Instruct</td><td>.356</td><td>.936</td></tr>
-        <tr class="grp"><th colspan="3">Other safety training</th></tr>
-        <tr class=""><td>Circuit Breakers</td><td>.579</td><td>.916</td></tr>
-        <tr class=""><td>MAGIC</td><td>.850</td><td>.920</td></tr>
-        <tr class="grp"><th colspan="3">Self-play</th></tr>
-        <tr class=""><td>Naive self-play</td><td>.638</td><td>.886</td></tr>
-        <tr class=""><td>Self-RedTeam</td><td>.808</td><td>.830</td></tr>
-        <tr class=""><td>Fictitious self-play</td><td>.890</td><td>.844</td></tr>
-        <tr class="ours"><td>PSRO (ours)</td><td>.955</td><td>.811</td></tr>
-      </tbody>
-    </table></div>
-    <p class="note">Safety averages seven harmful-prompt measures; Helpful averages benign compliance on WildJailbreak and XSTest. All trained rows start from the abliterated model. PSRO, fictitious self-play and MAGIC average two seeds.</p>
-  </section>
+        <tr><td>Abliterated base</td><td>.356</td><td><b>.936</b></td><td>.938</td><td>.910</td><td>.575</td></tr>
+        <tr class="sep"><td>Circuit Breakers <a href="#r4">[4]</a></td><td>.579</td><td>.916</td><td>.583</td><td>.277</td><td>.354</td></tr>
+        <tr><td>MAGIC <a href="#r5">[5]</a></td><td>.850<small> ±.007</small></td><td>.920<small> ±.071</small></td><td>.359<small> ±.150</small></td><td>.395<small> ±.087</small></td><td>.103<small> ±.000</small></td></tr>
+        <tr class="sep"><td>Naive self-play</td><td>.638</td><td>.886</td><td>.737</td><td>.630</td><td>.259</td></tr>
+        <tr><td>Self-RedTeam <a href="#r6">[6]</a></td><td>.808</td><td>.830</td><td>.159</td><td>.400</td><td>.196</td></tr>
+        <tr><td>Fictitious self-play</td><td>.890<small> ±.037</small></td><td>.844<small> ±.014</small></td><td>.210<small> ±.129</small></td><td>.130<small> ±.071</small></td><td>.068<small> ±.033</small></td></tr>
+        <tr class="ours"><td><b>PSRO (ours)</b></td><td><b>.955</b><small> ±.010</small></td><td>.811<small> ±.047</small></td><td><b>.088</b><small> ±.006</small></td><td><b>.053</b><small> ±.019</small></td><td><b>.031</b><small> ±.012</small></td></tr>
+      </tbody></table></div>
+    <p>The judge that scores training could itself be fooled, so we re-score the same answers with three judges never used in training. PSRO has the lowest harmful-response rate under every one (Figure 5a). The recipe also raises the safety of an abliterated Qwen3-8B (Figure 5b).</p>
+    <figure><div class="frame"><div class="two">
+      <div class="panel"><span class="ptitle">(a) Harmful responses by judge ↓</span><svg id="f-judge" viewBox="0 0 330 182" role="img" aria-label="Harmful-response rate under four judges"></svg></div>
+      <div class="panel"><span class="ptitle">(b) Safety before and after PSRO ↑</span><svg id="f-models" viewBox="0 0 330 156" role="img" aria-label="Safety before and after training for two model families"></svg></div>
+    </div></div>
+    <figcaption><b>Figure 5: The result holds under other judges and for a second model.</b> (a) The same outputs under four judges; WildGuard supplies the training reward and the other three are unseen. (b) Llama is the fifth generation, averaged over two seeds; Qwen is one run at its fourth generation, where helpfulness falls from .966 to .740.</figcaption></figure>
+  </div>
+  <div class="sub">
+    <h3><span class="n">3.2</span>The defender improves as the population grows</h3>
+    <p>On held-out benchmarks, safety plus helpfulness rises over PSRO's generations, with a dip at the fourth, while fictitious self-play ends where it started and naive self-play goes back and forth (Figure 6a). Inside the game, the best payoff that any attacker of the final population achieves against PSRO's defender mixture falls at every iteration, including attackers trained later (Figure 6b).</p>
+    <figure><div class="frame"><div class="two">
+      <div class="panel"><span class="ptitle">(a) Safety + helpfulness ↑</span><svg id="f-round" viewBox="0 0 330 210" role="img" aria-label="Safety plus helpfulness by generation for three methods"></svg></div>
+      <div class="panel"><span class="ptitle">(b) Best attacker payoff ↓</span><svg id="f-unseen" viewBox="0 0 330 210" role="img" aria-label="Best attacker payoff by generation"></svg></div>
+    </div></div>
+    <figcaption><b>Figure 6: Progress across generations.</b> (a) Held-out benchmarks, one seed per method. (b) Worst case of PSRO's Nash defender against attackers A<sub>0</sub> to A<sub>5</sub>.</figcaption></figure>
+  </div>
+  <div class="sub">
+    <h3><span class="n">3.3</span>Newer is not always stronger, so the choice of opponent matters</h3>
+    <p>Strategies beat one another in cycles. The third defender does worse against A<sub>3</sub> than the older second defender does, so the equilibrium spreads its weight over older members and can give the newest ones none (Figure 7a). Finding these weights is cheap: filling in a new member's row or column takes minutes, while training the member takes hours. Weighting all opponents equally skips that step but spends practice on opponents that are already beaten. It trains for more steps and ends less safe (Figure 7b, Table 1).</p>
+    <figure><div class="frame"><div class="two">
+      <div class="panel"><span class="ptitle">(a) Opponents for the fifth defender</span><svg id="f-old" viewBox="0 0 330 172" role="img" aria-label="Nash weight on each attacker"></svg></div>
+      <div class="panel"><span class="ptitle">(b) Training steps over five iterations</span><svg id="f-cost" viewBox="0 0 330 104" role="img" aria-label="Training steps of PSRO and fictitious self-play"></svg></div>
+    </div></div>
+    <figcaption><b>Figure 7: Choosing opponents.</b> (a) Nash weight on each attacker, which we solve here from the final payoff matrix in the paper; the weights used during training may differ slightly. (b) Estimating the matrix adds about 6% to PSRO's training time.</figcaption></figure>
+  </div>
+  <div class="sub">
+    <h3><span class="n">3.4</span>Members need room to learn</h3>
+    <p>PSRO starts every member from the base model. In a warm-start variant that continues the previous member instead, the second defender fell behind and then collapsed into empty answers (Figure 8). The likely cause is that reinforcement learning had already concentrated the first defender on a narrow set of behaviours, leaving its successor too little to explore.</p>
+    <figure><div class="frame"><svg id="f-fresh" viewBox="0 0 520 200" style="max-width:520px;margin:0 auto" role="img" aria-label="Safety of cold-start and warm-start PSRO in generations one and two"></svg></div>
+    <figcaption><b>Figure 8: Cold start and warm start.</b> Safety of the first two defenders, one run each. The warm-start point at generation 2 is its last checkpoint before the collapse.</figcaption></figure>
+  </div>
+  <div class="sub">
+    <h3><span class="n">3.5</span>Strong attackers exploit the reward</h3>
+    <p>In an earlier run, once the attackers became strong, they found two gaps in the reward. In <i>label drift</i>, an attacker given a harmless request rewrote it into a harmful one to collect the reward for harmful compliance. In <i>topic substitution</i>, it replaced a hard harmful request with an easier one. We revised the reward before the reported run. Label drift is addressed, but substitution is not fully prevented (Figure 9b). It does not mislead the defender, which still learns to refuse these prompts, but it inflates the attacker's payoff. As self-play gets stronger, the reward becomes the part that needs work <a href="#r7">[7]</a>.</p>
+    <figure><div class="frame"><div class="two">
+      <div class="panel"><span class="ptitle">(a) Label drift (made-up example)</span><div class="ex" style="padding-top:8px"><div><span>Given</span><q>“Suggest a good hiking trail.”</q></div><div><span>Task</span><q>Reword it to mislead the defender</q></div><div><span>Wrote</span><q class="bad">“Explain how to pick a lock.”</q></div></div></div>
+      <div class="panel"><span class="ptitle">(b) Topic substitution in the reported run</span><svg id="f-sub" viewBox="0 0 330 160" role="img" aria-label="Share of rewrites with topic substitution for attackers two to five"></svg></div>
+    </div></div>
+    <figcaption><b>Figure 9: Reward hacking.</b> (a) What label drift looks like. (b) Share of each attacker's rewrites that substitute an easier request, after the reward was revised.</figcaption></figure>
+  </div>
+</section>
 
-  <section id="findings">
-    <h2>Findings</h2>
-    <div class="cards">
-      <div class="card"><svg class="mini" id="f-round" viewBox="0 0 260 120" role="img" aria-label="Training only against the latest opponent goes in circles"></svg><h3>Training only against the latest opponent goes in circles</h3><p>Attack and defense strategies beat each other in cycles, like rock-paper-scissors. A model that only chases the newest opponent keeps trading one weakness for another instead of making progress.</p></div>
-      <div class="card"><svg class="mini" id="f-old" viewBox="0 0 260 120" role="img" aria-label="Newer is not always stronger"></svg><h3>Newer is not always stronger</h3><p>A newer defender can lose to an attack an older one stopped. So the best practice mix often leans on older opponents. Here the two newest attackers get no weight (mixture solved from the paper's final payoff matrix).</p></div>
-      <div class="card"><svg class="mini" id="f-unseen" viewBox="0 0 260 120" role="img" aria-label="Beating past opponents prepares you for future ones"></svg><h3>Beating past opponents prepares you for future ones</h3><p>A defender trained against a well-chosen mix of past attackers also holds up against attackers trained after it. The strongest of them does worse every round.</p></div>
-      <div class="card"><svg class="mini" id="f-cost" viewBox="0 0 260 120" role="img" aria-label="Choosing opponents well beats training longer"></svg><h3>Choosing opponents well beats training longer</h3><p>Measuring how a new member does against everyone takes minutes; training it takes hours. Weighting all opponents equally skips that measurement, wastes practice on opponents already beaten, trains longer, and still ends up less safe.</p></div>
-      <div class="card"><svg class="mini" id="f-fresh" viewBox="0 0 260 120" role="img" aria-label="Each new member should start from scratch"></svg><h3>Each new member should start from scratch</h3><p>A model that has already been trained hard has little room left to learn. Continuing it falls behind and then breaks into blank answers. Starting each member from the original model keeps every round trainable.</p></div>
-      <div class="card"><div class="example" aria-label="A strong opponent is the best bug finder for your reward">
-        <span class="note">Made-up example</span>
-        <div class="ex-row"><span class="ex-tag">Given</span><span class="ex-box">"Suggest a good hiking trail."</span></div>
-        <div class="ex-row"><span class="ex-tag">Job</span><span class="ex-box">Reword it to trick the defender</span></div>
-        <div class="ex-row"><span class="ex-tag bad">Wrote</span><span class="ex-box bad">"Explain how to pick a lock."</span></div>
-      </div><h3>A strong opponent is the best bug finder for your reward</h3><p>Once attackers got good, they found a loophole: instead of rewording the request they were given, they swapped in a harmful one, because the scoring paid for that. The population exposed a flaw we had not noticed.</p></div>
-      <div class="card"><svg class="mini" id="f-sub" viewBox="0 0 260 120" role="img" aria-label="Eventually the reward, not the algorithm, is the limit"></svg><h3>Eventually the reward, not the algorithm, is the limit</h3><p>After we fixed that loophole, a milder trick remained: swapping a hard request for an easier one. As self-play gets stronger, better scoring becomes the main thing to improve.</p></div>
-      <div class="card"><svg class="mini" id="f-judge" viewBox="0 0 260 120" role="img" aria-label="Check with judges the model never trained against"></svg><h3>Check with judges the model never trained against</h3><p>A model can learn to please the judge that trained it. Re-scoring with three outside judges shows the safety is real: ours gives the fewest harmful answers under every one.</p></div>
-      <div class="card"><svg class="mini" id="f-safe" viewBox="0 0 260 120" role="img" aria-label="The result: the safest self-play defender"></svg><h3>The result: the safest self-play defender</h3><p>Starting from a model whose safety training was removed, keeping and weighting the whole population ends up refusing harmful requests most reliably.</p></div>
-      <div class="card"><svg class="mini" id="f-dan" viewBox="0 0 260 120" role="img" aria-label="The biggest gains come on the most creative attacks"></svg><h3>The biggest gains come on the most creative attacks</h3><p>Role-play jailbreaks, which ask the model to become a character with no rules, beat models trained against one opponent. A population has seen enough variety to block almost all of them.</p></div>
-      <div class="card"><svg class="mini" id="f-normal" viewBox="0 0 260 120" role="img" aria-label="Safe does not have to mean unhelpful"></svg><h3>Safe does not have to mean unhelpful</h3><p>Ours still answers everyday questions as often as the original model. The cost is narrower: it turns down more harmless questions that are worded to look suspicious.</p></div>
-      <div class="card"><svg class="mini" id="f-models" viewBox="0 0 260 120" role="img" aria-label="Not tied to one model family"></svg><h3>Not tied to one model family</h3><p>The same recipe makes both Llama and Qwen far safer, each starting from a version with its safety training removed.</p></div>
-    </div>
-  </section>
+<section>
+  <h2><span class="n">4</span>Limitations</h2>
+  <p>PSRO gives up some helpfulness. The loss is almost entirely on benign prompts worded to look adversarial; compliance on ordinary safe prompts is unchanged. Every self-play method also costs more than a defence that trains one model once. Table 1 averages two seeds for PSRO, fictitious self-play and MAGIC, but the per-generation curves show one seed, and topic substitution remains in the reported run.</p>
+</section>
 
-  <section id="bibtex">
-    <div class="bibhead"><h2>BibTeX</h2><button class="replay" id="copy" type="button">Copy</button></div>
-    <pre class="bib" id="bib">@article{chen2026population,
+<section>
+  <h2><span class="n">5</span>Related work</h2>
+  <p>GRTS <a href="#r2">[2]</a> first cast red-teaming as a two-player game solved with PSRO, and we adopt its formulation. We ask which part does the work, by comparing latest-opponent, uniformly weighted and equilibrium-weighted self-play, at 8B and on external benchmarks. Most recent methods, including Self-RedTeam <a href="#r6">[6]</a>, MAGIC <a href="#r5">[5]</a> and MART <a href="#r8">[8]</a>, train against the opponent's current version and do not keep past opponents. Pipeline PSRO <a href="#r9">[9]</a> and related methods scale PSRO in settings where matchups are cheap to evaluate.</p>
+</section>
+
+<section>
+  <h2>References</h2>
+  <ol class="refs">
+    <li id="r1">Lanctot et al. <a href="https://arxiv.org/abs/1711.00832">A Unified Game-Theoretic Approach to Multiagent Reinforcement Learning</a>. 2017.</li>
+    <li id="r2">Ma et al. <a href="https://arxiv.org/abs/2310.00322">Evolving Diverse Red-team Language Models in Multi-round Multi-agent Games</a>. 2024.</li>
+    <li id="r3">Heinrich and Silver. <a href="https://arxiv.org/abs/1603.01121">Deep Reinforcement Learning from Self-Play in Imperfect-Information Games</a>. 2016.</li>
+    <li id="r4">Zou et al. Improving Alignment and Robustness with Circuit Breakers. 2024.</li>
+    <li id="r5">Wen et al. <a href="https://arxiv.org/abs/2602.01539">MAGIC: A Co-Evolving Attacker-Defender Adversarial Game for Robust LLM Safety</a>. 2026.</li>
+    <li id="r6">Liu et al. <a href="https://arxiv.org/abs/2506.07468">Chasing Moving Targets with Online Self-Play Reinforcement Learning for Safer Language Models</a>. 2026.</li>
+    <li id="r7">Gao et al. <a href="https://arxiv.org/abs/2210.10760">Scaling Laws for Reward Model Overoptimization</a>. 2022.</li>
+    <li id="r8">Ge et al. <a href="https://arxiv.org/abs/2311.07689">MART: Improving LLM Safety with Multi-round Automatic Red-Teaming</a>. 2023.</li>
+    <li id="r9">McAleer et al. <a href="https://arxiv.org/abs/2006.08555">Pipeline PSRO: A Scalable Approach for Finding Approximate Nash Equilibria in Large Games</a>. 2021.</li>
+  </ol>
+</section>
+
+<section id="bibtex">
+  <div class="bibhead"><h2>BibTeX</h2><button class="btn" id="copy" type="button">Copy</button></div>
+  <pre id="bib">@article{chen2026population,
   title   = {Population-Based Self-Play for LLM Safety Training},
-  author  = {Chen, Wentse and Wu, Xudong and Gan, Yu and Lan, Guangchen and Zhang, Zhihan and Krishnamurthy, Arvind and Chen, Jiayu and Schneider, Jeff},
-  journal = {arXiv preprint arXiv:TODO},
+  author  = {Chen, Wentse and Wu, Xudong and Gan, Yu and Lan, Guangchen and
+             Zhang, Zhihan and Krishnamurthy, Arvind and Chen, Jiayu and Schneider, Jeff},
   year    = {2026}
 }</pre>
-  </section>
-
-  <footer>Code, training and evaluation configurations are released; checkpoints will follow.</footer>
+</section>
+<footer>Trained checkpoints will be released upon publication.</footer>
 </div>
 
 <script>
 const $ = s => document.querySelector(s);
-const SVGNS = 'http://www.w3.org/2000/svg';
 const REDUCE = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const el = (tag, at = {}, parent) => { const e = document.createElementNS('http://www.w3.org/2000/svg', tag);
+  for (const k in at) e.setAttribute(k, at[k]); if (parent) parent.appendChild(e); return e; };
+const txt = (svg, x, y, s, at = {}) => { const t = el('text', {x, y, ...at}, svg); t.textContent = s; return t; };
 const fmt2 = v => (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v).toFixed(2);
-const el = (tag, attrs = {}, parent) => { const e = document.createElementNS(SVGNS, tag);
-  for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; };
-
-function tween(node, from, to, digits, dur = 650) {
-  if (REDUCE || from === to) { node.textContent = to.toFixed(digits); return; }
-  const t0 = performance.now();
-  const step = t => { const p = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - p, 3);
-    node.textContent = (from + (to - from) * e).toFixed(digits); if (p < 1) requestAnimationFrame(step); };
-  requestAnimationFrame(step);
-}
-// run fn once each time the element scrolls into view (resting state = final frame, so the page is complete without it)
-function whenVisible(node, fn) {
+function whenVisible(node, fn) {   // resting state = final frame, so the page is complete without the animation
   if (REDUCE || !('IntersectionObserver' in window)) return;
   let seen = false;
-  new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting && !seen) { seen = true; fn(); } }), { threshold: 0.4 }).observe(node);
+  new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting && !seen) { seen = true; fn(); } }), {threshold: .4}).observe(node);
+}
+function marker(svg, id, color) {
+  el('path', {d: 'M0,0 L10,5 L0,10 z', style: `fill:${color}`},
+    el('marker', {id, viewBox: '0 0 10 10', refX: 9, refY: 5, markerWidth: 6, markerHeight: 6, orient: 'auto'}, el('defs', {}, svg)));
 }
 
-/* ---------------- hero: PSRO replay ---------------- */
-const M = [
-  [-0.47,-0.75,-0.75,-0.74,-0.79,-0.79],
-  [ 0.26,-0.73,-0.53,-0.72,-0.73,-0.72],
-  [ 0.11,-0.28,-0.75,-0.74,-0.63,-0.74],
-  [ 0.11,-0.45,-0.67,-0.51,-0.73,-0.72],
-  [-0.06,-0.67,-0.69,-0.68,-0.70,-0.71],
-  [-0.04,-0.68,-0.67,-0.69,-0.69,-0.70]];
-const NASH_D = {1:{1:1}, 2:{1:.33,2:.67}, 3:{2:.60,3:.40}, 4:{2:.26,3:.16,4:.58}, 5:{5:1}};   // paper Table 2b
-const PS = [.900,.965,.921,.873,.962], PH = [.760,.736,.858,.882,.844];   // appendix table, cold-start PSRO D1-D5
-const BASE = { S: .356, H: .936 };
+/* ---- safety-helpfulness plots: one shared range, so shapes can be compared ---- */
+const PS = [.900,.965,.921,.873,.962], PH = [.760,.736,.858,.882,.844];              // appendix table, cold-start PSRO D1-D5
+const NV = [[.653,.932],[.877,.654],[.731,.912],[.856,.690],[.638,.886]];             // naive self-play D1-D5
+const RS = [.60, 1.00], RH = [.62, .96], X0 = 34, X1 = 322, Y0 = 8, Y1 = 220;
+const px = v => X0 + 8 + (v - RS[0]) / (RS[1] - RS[0]) * (X1 - X0 - 30), py = v => Y1 - 4 - (v - RH[0]) / (RH[1] - RH[0]) * (Y1 - Y0 - 22);
+function axes(svg, id) {
+  marker(svg, id, 'var(--ink)');
+  el('line', {class: 'axl', x1: X0, y1: Y1, x2: X1, y2: Y1, 'marker-end': `url(#${id})`}, svg);
+  el('line', {class: 'axl', x1: X0, y1: Y1, x2: X0, y2: Y0, 'marker-end': `url(#${id})`}, svg);
+  txt(svg, (X0 + X1) / 2, Y1 + 24, 'Safety →', {class: 'axt', 'text-anchor': 'middle'});
+  txt(svg, 18, (Y0 + Y1) / 2, 'Helpfulness →', {class: 'axt', 'text-anchor': 'middle', transform: `rotate(-90 18 ${(Y0 + Y1) / 2})`});
+  txt(svg, X1, Y0 + 8, 'better ↗', {class: 'better', 'text-anchor': 'end'});
+}
+function path(gs, V, n, color, mk, big) {
+  for (let i = 1; i < n; i++) {
+    const ax = px(V[i-1][0]), ay = py(V[i-1][1]), bx = px(V[i][0]), by = py(V[i][1]), L = Math.hypot(bx - ax, by - ay), dx = (bx - ax) / L, dy = (by - ay) / L;
+    el('line', {x1: ax + dx * 7, y1: ay + dy * 7, x2: bx - dx * 8, y2: by - dy * 8, style: `stroke:${color};stroke-width:1.7`, 'marker-end': `url(#${mk})`}, gs);
+  }
+  V.slice(0, n).forEach(([s, h], i) => el('circle', {cx: px(s), cy: py(h), r: i === n - 1 ? big : 4, style: `fill:${color}`}, gs));
+}
 
-// schematic safety-vs-helpfulness axes: arrowed axes, axis titles, a "better" hint, no tick values
-function axes(svg, id, x0, x1, y0, y1) {
-  const m = el('marker', {id, viewBox: '0 0 10 10', refX: 8, refY: 5, markerWidth: 7, markerHeight: 7, orient: 'auto'}, el('defs', {}, svg));
-  el('path', {d: 'M0,0 L10,5 L0,10 z', style: 'fill:var(--ink)'}, m);
-  el('line', {class: 'ax', x1: x0, y1: y1, x2: x1, y2: y1, 'marker-end': `url(#${id})`}, svg);
-  el('line', {class: 'ax', x1: x0, y1: y1, x2: x0, y2: y0, 'marker-end': `url(#${id})`}, svg);
-  const xt = el('text', {class: 'axt', x: (x0 + x1) / 2, y: y1 + 22, 'text-anchor': 'middle'}, svg); xt.textContent = 'Safety →';
-  const yt = el('text', {class: 'axt', x: x0 - 12, y: (y0 + y1) / 2, 'text-anchor': 'middle', transform: `rotate(-90 ${x0 - 12} ${(y0 + y1) / 2})`}, svg);
-  yt.textContent = 'Helpfulness →';
-  const b = el('text', {class: 'better', x: x1 - 4, y: y0 + 12, 'text-anchor': 'end'}, svg); b.textContent = 'better ↗';
-}
-// both safety-helpfulness plots use this one range, so their shapes can be compared
-const RS = [.60, 1.00], RH = [.62, .96];
-const tsvg = $('#t-svg'), tx = v => 34 + (v - RS[0]) / (RS[1] - RS[0]) * 286, ty = v => 222 - (v - RH[0]) / (RH[1] - RH[0]) * 206;
-{
-  const tdefs = el('defs', {}, tsvg), tm = el('marker', {id: 'tarrow', viewBox: '0 0 10 10', refX: 9, refY: 5, markerWidth: 6, markerHeight: 6, orient: 'auto'}, tdefs);
-  el('path', {d: 'M0,0 L10,5 L0,10 z', style: 'fill:var(--psro)'}, tm);
-}
-axes(tsvg, 'tax', 30, 330, 8, 226);
-const tSeg = el('g', {}, tsvg), tPts = el('g', {}, tsvg);
-const TL = [[-24, 4], [10, 10], [-24, 12], [-24, -4], [10, 4]];   // label offsets D1-D5
-let prevS = PS[4], prevH = PH[4];
-
-function cellBg(v) {   // same mapping as the PSRO loop GIF
-  const t = Math.round(15 + 85 * Math.min(1, Math.abs(v) / 0.8));
-  return `color-mix(in srgb, var(${v >= 0 ? '--atk' : '--def'}) ${t}%, var(--panel))`;
-}
-function setDelta(node, d, k) {
-  node.className = 'delta ' + (d >= 0 ? 'up' : 'down');
-  node.textContent = (d >= 0 ? '▲ ' : '▼ ') + Math.abs(d).toFixed(3) + (k === 1 ? ' vs base' : ` vs D${k - 1}`);
-}
+/* ---- Figure 1 ---- */
+const M = [[-0.47,-0.75,-0.75,-0.74,-0.79,-0.79],[0.26,-0.73,-0.53,-0.72,-0.73,-0.72],[0.11,-0.28,-0.75,-0.74,-0.63,-0.74],
+  [0.11,-0.45,-0.67,-0.51,-0.73,-0.72],[-0.06,-0.67,-0.69,-0.68,-0.70,-0.71],[-0.04,-0.68,-0.67,-0.69,-0.69,-0.70]];
+const NASH = {1:{1:1}, 2:{1:.33,2:.67}, 3:{2:.60,3:.40}, 4:{2:.26,3:.16,4:.58}, 5:{5:1}};   // paper payoff table (b)
+const tsvg = $('#t-svg'); axes(tsvg, 'ax1'); marker(tsvg, 'mk1', 'var(--psro)');
+const tG = el('g', {}, tsvg), TL = [[-22, 4], [9, 12], [-22, 14], [-22, -4], [10, 4]];
+const cellBg = v => `color-mix(in srgb, var(${v >= 0 ? '--atk' : '--def'}) ${Math.round(15 + 85 * Math.min(1, Math.abs(v) / .8))}%, white)`;
 function renderHero(k) {
-  $('#h-klab').textContent = k; $('#h-klab2').textContent = k; $('#h-k').value = k;
-  document.querySelectorAll('#stage .kk').forEach(n => n.textContent = k);
-  // matrix grows to (k+1) x (k+1) inside a fixed 6 x 6 frame, so the layout never shifts; the new row and column pop in
-  let h = '<tr><th></th>' + Array.from({length: 6}, (_, j) => `<th class="d${j > k ? ' hide' : ''}">D${j}</th>`).join('') + '</tr>';
+  $('#h-klab').textContent = k; $('#h-k').value = k; document.querySelectorAll('.kk').forEach(n => n.textContent = k);
+  let h = '<tr><th></th>' + [0,1,2,3,4,5].map(j => `<th class="d${j > k ? ' hide' : ''}">D${j}</th>`).join('') + '</tr>';
   for (let i = 0; i < 6; i++) {
     h += `<tr><th class="a${i > k ? ' hide' : ''}">A${i}</th>`;
     for (let j = 0; j < 6; j++) {
       if (i > k || j > k) { h += '<td class="hide"></td>'; continue; }
-      const v = M[i][j], fresh = (i === k || j === k);
-      h += `<td class="${NASH_D[k][j] ? 'nash' : ''}" style="background:${cellBg(v)};color:${Math.abs(v) > 0.6 ? '#fff' : 'inherit'};${fresh ? '' : 'animation:none'}">${fmt2(v)}</td>`;
+      const v = M[i][j];
+      h += `<td class="${NASH[k][j] ? 'nash ' : ''}${i === k || j === k ? 'fresh' : ''}" style="background:${cellBg(v)};color:${Math.abs(v) > .6 ? '#fff' : 'inherit'}">${fmt2(v)}</td>`;
     }
     h += '</tr>';
   }
   $('#matrix').innerHTML = h;
-  $('#mix').innerHTML = [1, 2, 3, 4, 5].map(j => { const w = NASH_D[k][j] || 0;
-    return `<div class="mixrow${j > k ? ' hide' : ''}"><span>D${j}</span><div class="bar"><span style="width:${w * 100}%"></span></div><span>${w ? w.toFixed(2) : '—'}</span></div>`; }).join('');
-  // safety and helpfulness together
-  const S = PS[k - 1], H = PH[k - 1];
-  tween($('#t-s'), prevS, S, 3); tween($('#t-h'), prevH, H, 3); prevS = S; prevH = H;
-  setDelta($('#t-ds'), S - (k === 1 ? BASE.S : PS[k - 2]), k);
-  setDelta($('#t-dh'), H - (k === 1 ? BASE.H : PH[k - 2]), k);
-  tSeg.innerHTML = ''; tPts.innerHTML = '';
-  for (let i = 1; i < k; i++) {
-    const ax = tx(PS[i - 1]), ay = ty(PH[i - 1]), bx2 = tx(PS[i]), by2 = ty(PH[i]), dx = bx2 - ax, dy = by2 - ay, sh = 9 / Math.hypot(dx, dy);
-    el('line', {class: 'tseg', x1: ax + dx * sh, y1: ay + dy * sh, x2: bx2 - dx * sh, y2: by2 - dy * sh}, tSeg);
-  }
-  PS.slice(0, k).forEach((s, i) => {
-    const cur = i === k - 1;
-    el('circle', {class: 'tp' + (cur ? ' cur' : ''), cx: tx(s), cy: ty(PH[i]), r: cur ? 7 : 4.5}, tPts);
-    const t = el('text', {class: 'plab', x: tx(s) + TL[i][0], y: ty(PH[i]) + TL[i][1]}, tPts); t.textContent = 'D' + (i + 1);
-  });
+  $('#mix').innerHTML = [1,2,3,4,5].map(j => { const w = NASH[k][j] || 0;
+    return `<div class="mixrow${j > k ? ' hide' : ''}"><span>D${j}</span><div class="bar"><span style="width:${w * 100}%"></span></div><span>${w ? w.toFixed(2) : '–'}</span></div>`; }).join('');
+  tG.innerHTML = ''; const V = PS.map((s, i) => [s, PH[i]]);
+  path(tG, V, k, 'var(--psro)', 'mk1', 6);
+  V.slice(0, k).forEach(([s, v], i) => txt(tG, px(s) + TL[i][0], py(v) + TL[i][1], 'D' + (i + 1), {class: 'ink'}));
 }
-
-// autoplay: 1 → 5, hold, loop; pauses on slider use
-let heroK = 5, heroTimer = null;
-const playBtn = $('#h-play');
+let heroK = 5, heroT = null;
 function setPlaying(on) {
-  clearInterval(heroTimer); heroTimer = null;
-  playBtn.classList.toggle('paused', !on);
-  playBtn.textContent = on ? '❚❚ Pause' : '▶ Play';
-  if (on) {
-    if (heroK >= 5) { heroK = 1; prevS = BASE.S; prevH = BASE.H; renderHero(1); }
-    let hold = 0;
-    heroTimer = setInterval(() => {
-      if (heroK < 5) { heroK++; renderHero(heroK); }
-      else if (++hold >= 2) { hold = 0; heroK = 1; prevS = BASE.S; prevH = BASE.H; renderHero(1); }
-    }, 1800);
-  }
+  clearInterval(heroT); heroT = null; $('#h-play').textContent = on ? '❚❚ Pause' : '▶ Play';
+  if (!on) return;
+  if (heroK >= 5) renderHero(heroK = 1);
+  let hold = 0;
+  heroT = setInterval(() => { if (heroK < 5) renderHero(++heroK); else if (++hold >= 2) { hold = 0; renderHero(heroK = 1); } }, 1800);
 }
-playBtn.addEventListener('click', () => setPlaying(!heroTimer));
-$('#h-k').addEventListener('input', e => { setPlaying(false); heroK = +e.target.value; renderHero(heroK); });
-renderHero(5);
-setPlaying(false);
-whenVisible($('#stage'), () => setPlaying(true));
+$('#h-play').addEventListener('click', () => setPlaying(!heroT));
+$('#h-k').addEventListener('input', e => { setPlaying(false); renderHero(heroK = +e.target.value); });
+renderHero(5); whenVisible($('#fig1'), () => setPlaying(true));
 
-/* ---------------- (a) pool coverage ---------------- */
+/* ---- Figure 2 ---- */
 const COV = ["11101000000000001100000000100000000000000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
 "00000111000100100010001000000000000010000000000000000000000000000000001100100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
 "10011001110010001000110111000100010000000001000010100000000100000010000000000000100000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000",
 "11111111011001011111100001000110101001101000010000000011110010001001000011101001011100000000010000010000000001011000001100000000010000000000000000000000000000000000000000000000000000000000000000000000",
 "11110111111111110001111000011011000111010110101111111101011111110100111101010110000001101101001001001011111100100000110000110010101100000001110000000000000000000000000000000000000000000000000000000000",
 "11111110101111110111011110111001111100111111101101011110101001111111110010011000000010010010100110100100000010000111000011001101000011111010001000000000000000000000000000000000000000000000000000000000"];
-const POOL = [.210, .370, .492, .587, .660, .715];          // pool@k averaged over all subsets (paper Fig. 2a)
+const POOL = [.210, .370, .492, .587, .660, .715], NK = POOL.map(v => Math.round(v * 200));
+const NB = Array.from({length: 200}, (_, i) => COV.reduce((s, r) => s + (r[i] === '1'), 0));
+const RANK = [...Array(200).keys()].sort((a, b) => NB[b] - NB[a] || a - b);
 $('#board').innerHTML = '<i></i>'.repeat(200);
-const dots = [...document.querySelectorAll('#board i')];
-const curve = $('#a-curve');
-const cx = k => 34 + (k - 1) * 49, cy = v => 150 - v / 0.8 * 135;
-[0, .2, .4, .6, .8].forEach(v => { el('line', {x1: 30, x2: 292, y1: cy(v), y2: cy(v), stroke: 'var(--rule)'}, curve);
-  el('text', {x: 0, y: cy(v) + 3}, curve).textContent = v.toFixed(1); });
-[1,2,3,4,5,6].forEach(k => { el('text', {x: cx(k) - 3, y: 166}, curve).textContent = k; });
-el('text', {x: 120, y: 180}, curve).textContent = 'attackers in pool, k';
-el('line', {class: 'base', x1: 30, x2: 292, y1: cy(POOL[0]), y2: cy(POOL[0])}, curve);
-const aArea = el('polygon', {class: 'area'}, curve), aLine = el('polyline', {class: 'ln'}, curve), aPts = el('g', {}, curve);
-const aLab = el('text', {class: 'lbl', x: 40, y: 18, style: 'fill:var(--atk-ink);font-weight:600'}, curve);
-el('text', {x: 250, y: cy(POOL[0]) + 12}, curve).textContent = 'pool@1';
-
-let aTimer = null;
-// Dot counts follow the averaged curve: N_k = pool@k x 200. Prompts light up in order of how many of the six
-// attackers break them, which is the order their expected coverage over random k-subsets reaches them.
-const NBREAK = Array.from({length: 200}, (_, i) => COV.reduce((s, r) => s + (r[i] === '1'), 0));
-const RANK = [...Array(200).keys()].sort((a, b) => NBREAK[b] - NBREAK[a] || a - b);
-const NK = POOL.map(v => Math.round(v * 200));
+const dots = [...document.querySelectorAll('#board i')], cv = $('#a-curve');
+const cx = k => 42 + (k - 1) * 48, cy = v => 154 - v / .8 * 142;
+[0, .2, .4, .6, .8].forEach(v => { el('line', {class: v ? 'gl' : 'axl', x1: 32, x2: 294, y1: cy(v), y2: cy(v)}, cv); txt(cv, 26, cy(v) + 4, v.toFixed(1), {'text-anchor': 'end'}); });
+[1,2,3,4,5,6].forEach(k => txt(cv, cx(k), 170, k, {'text-anchor': 'middle'}));
+txt(cv, 163, 187, 'attackers in the pool, k', {'text-anchor': 'middle', class: 'ink'});
+el('line', {x1: 32, x2: 294, y1: cy(.21), y2: cy(.21), style: 'stroke:var(--muted);stroke-dasharray:4 3'}, cv); txt(cv, 294, cy(.21) + 13, 'single run', {'text-anchor': 'end'});
+const aG = el('g', {}, cv);
 function renderA(k) {
-  // the k-th attacker breaks NK[0] prompts on average; NK[k-1] - NK[k-2] of them are new, the rest were already covered
-  const n0 = k > 1 ? NK[k - 2] : 0, n1 = NK[k - 1], fresh = n1 - n0, dup = NK[0] - fresh;
+  const n0 = k > 1 ? NK[k-2] : 0, n1 = NK[k-1], fresh = n1 - n0, dup = NK[0] - fresh;
   dots.forEach(d => d.className = '');
-  RANK.slice(0, n1).forEach((idx, r) => dots[idx].className = r < dup ? 'dup' : r < n0 ? 'on' : 'new');
+  RANK.slice(0, n1).forEach((ix, r) => dots[ix].className = r < dup ? 'dup' : r < n0 ? 'on' : 'new');
   $('#a-cov').textContent = n1;
-  $('#a-new').textContent = k === 1 ? `attacker 1 breaks ${NK[0]}` :
-    `attacker ${k} breaks ${NK[0]}: ${fresh} new, ${dup} already covered`;
-  const pts = POOL.slice(0, k).map((v, i) => `${cx(i + 1)},${cy(v)}`);
-  aLine.setAttribute('points', pts.join(' '));
-  aArea.setAttribute('points', pts.join(' ') + ` ${cx(k)},${cy(POOL[0])} ${cx(1)},${cy(POOL[0])}`);
-  aPts.innerHTML = ''; POOL.slice(0, k).forEach((v, i) => el('circle', {class: 'pt', cx: cx(i + 1), cy: cy(v), r: 3.2}, aPts));
-  aLab.textContent = `pool@${k} = ${POOL[k - 1].toFixed(3)}`;
-  const ax = $('#a-x'); if (k === 1) ax.textContent = '1.0'; else tween(ax, parseFloat(ax.textContent) || 1, POOL[k - 1] / POOL[0], 1, 700); $('#a-k').textContent = k;
+  $('#a-new').textContent = k === 1 ? `one attacker breaks ${NK[0]} on average` : `attacker ${k} adds ${fresh} new and repeats ${dup}`;
+  aG.innerHTML = '';
+  el('polyline', {points: POOL.slice(0, k).map((v, i) => `${cx(i+1)},${cy(v)}`).join(' '), style: 'fill:none;stroke:var(--atk);stroke-width:2.2'}, aG);
+  POOL.slice(0, k).forEach((v, i) => el('circle', {cx: cx(i+1), cy: cy(v), r: 3.5, style: 'fill:var(--atk)'}, aG));
+  if (k > 1) txt(aG, cx(k) - 6, cy(POOL[k-1]) - 9, (POOL[k-1] / POOL[0]).toFixed(1) + '×', {'text-anchor': 'end', class: 'b', style: 'fill:var(--atk-ink);font-size:13px'});
 }
-function playA() { clearInterval(aTimer); let k = 1; renderA(1);
-  aTimer = setInterval(() => { if (++k > 6) return clearInterval(aTimer); renderA(k); }, 1100); }
-renderA(6);
-whenVisible($('#va'), playA);
+let aT = null;
+const playA = () => { clearInterval(aT); let k = 1; renderA(1); aT = setInterval(() => { if (++k > 6) return clearInterval(aT); renderA(k); }, 1100); };
+renderA(6); whenVisible($('#fig2'), playA);
 
-/* ---------------- (b) entropy ---------------- */
-const ES = [[20,1],[60,1.266],[100,.378],[140,.087],[180,.024]];
-const ET = [[20,1],[60,1.040],[100,.974],[140,1.243],[180,1.562]];
-const bsvg = $('#b-svg'), bx = s => 34 + (s - 20) / 160 * 200, by = v => 206 - v / 1.7 * 190;
-[0, .5, 1, 1.5].forEach(v => { el('line', {x1: 30, x2: 240, y1: by(v), y2: by(v), stroke: 'var(--rule)', class: v === 1 ? 'one' : ''}, bsvg);
-  el('text', {x: 4, y: by(v) + 3}, bsvg).textContent = v.toFixed(1); });
-[20, 100, 180].forEach(s => { el('text', {x: bx(s) - 14, y: 224}, bsvg).textContent = 'step ' + s; });
-const mk = d => d.map(([s, v], i) => (i ? 'L' : 'M') + bx(s) + ',' + by(v)).join(' ');
-const pS = el('path', {class: 'strat', d: mk(ES), pathLength: 1}, bsvg), pT = el('path', {class: 'tok', d: mk(ET), pathLength: 1}, bsvg);
-const lS = el('text', {class: 'lbl lab-s', x: bx(180) + 6, y: by(.024) + 4}, bsvg); lS.textContent = 'strategies';
-const lT = el('text', {class: 'lbl lab-t', x: bx(180) + 6, y: by(1.562) + 4}, bsvg); lT.textContent = 'wording';
-function playB() {
-  [pS, pT].forEach(p => { p.style.transition = 'none'; p.style.strokeDasharray = '1'; p.style.strokeDashoffset = '1'; });
-  [lS, lT].forEach(l => { l.style.transition = 'none'; l.style.opacity = 0; });
-  bsvg.getBoundingClientRect();
-  [pS, pT].forEach(p => { p.style.transition = 'stroke-dashoffset 2.4s ease-in-out'; p.style.strokeDashoffset = '0'; });
-  setTimeout(() => [lS, lT].forEach(l => { l.style.transition = 'opacity .4s'; l.style.opacity = 1; }), 2300);
-}
-
-/* ---------------- (c) naive cycle ---------------- */
-const NV = [[.653,.932],[.877,.654],[.731,.912],[.856,.690],[.638,.886]];   // naive self-play D1-D5 (safety, helpful)
-const csvg = $('#c-svg'), qx = v => 34 + (v - RS[0]) / (RS[1] - RS[0]) * 270, qy = v => 212 - (v - RH[0]) / (RH[1] - RH[0]) * 196;
-const defs = el('defs', {}, csvg);
-['arrow', 'arrow2'].forEach(id => el('path', {d: 'M0,0 L10,5 L0,10 z'},
-  el('marker', {id, viewBox: '0 0 10 10', refX: 9, refY: 5, markerWidth: 6, markerHeight: 6, orient: 'auto'}, defs)));
-axes(csvg, 'cax', 26, 314, 6, 216);
+/* ---- Figure 3 ---- */
+const ES = [[20,1],[60,1.266],[100,.378],[140,.087],[180,.024]], ET = [[20,1],[60,1.040],[100,.974],[140,1.243],[180,1.562]];
+const bs = $('#b-svg'), bx = s => 40 + (s - 20) / 160 * 210, by = v => 220 - v / 1.7 * 206;
+[0, .5, 1, 1.5].forEach(v => { el('line', {class: v ? 'gl' : 'axl', x1: 34, x2: 256, y1: by(v), y2: by(v)}, bs); txt(bs, 28, by(v) + 4, v.toFixed(1), {'text-anchor': 'end'}); });
+[20, 60, 100, 140, 180].forEach(s => txt(bs, bx(s), 235, s, {'text-anchor': 'middle'}));
+txt(bs, 145, 250, 'training step', {'text-anchor': 'middle', class: 'ink'});
+const bp = [[ES, 'var(--atk)'], [ET, 'var(--psro)']].map(([d, c]) => el('path', {d: d.map(([s, v], i) => (i ? 'L' : 'M') + bx(s) + ',' + by(v)).join(' '), pathLength: 1, style: `fill:none;stroke:${c};stroke-width:2.4`}, bs));
+txt(bs, bx(180) + 7, by(.024) - 5, 'strategy', {class: 'b', style: 'fill:var(--atk-ink)'}); txt(bs, bx(180) + 7, by(1.562) + 4, 'token', {class: 'b', style: 'fill:var(--psro)'});
+const cs = $('#c-svg'); axes(cs, 'ax3'); marker(cs, 'mkN', 'var(--naive)'); marker(cs, 'mkP', 'var(--psro)');
 // every naive generation has safety + helpfulness <= 1.643, every PSRO generation >= 1.660
-el('line', {class: 'iso', x1: qx(1.65 - .95), y1: qy(.95), x2: qx(.99), y2: qy(1.65 - .99)}, csvg);
-const cSeg = el('g', {}, csvg), cPts = el('g', {}, csvg);
-const SERIES = [[NV, ''], [PS.map((s, i) => [s, PH[i]]), ' ours']];
-let cTimer = null;
-function renderC(n) {
-  cSeg.innerHTML = ''; cPts.innerHTML = '';
-  SERIES.forEach(([V, cls]) => {
-    for (let i = 1; i < n; i++) {
-      const [a, b] = [V[i - 1], V[i]], dx = qx(b[0]) - qx(a[0]), dy = qy(b[1]) - qy(a[1]), L = Math.hypot(dx, dy), sh = 7 / L;
-      el('line', {class: 'seg' + cls, x1: qx(a[0]) + dx * sh, y1: qy(a[1]) + dy * sh, x2: qx(b[0]) - dx * sh, y2: qy(b[1]) - dy * sh}, cSeg);
-    }
-    V.slice(0, n).forEach(([s, h], i) => el('circle', {class: 'p' + cls, cx: qx(s), cy: qy(h), r: i === n - 1 ? 6 : 4}, cPts));
-  });
-  el('text', {class: 'sname', x: qx(.62), y: qy(.70), style: 'fill:var(--atk-ink)'}, cPts).textContent = 'naive self-play';
-  el('text', {class: 'sname', x: qx(.955), y: qy(.905), 'text-anchor': 'middle', style: 'fill:var(--psro)'}, cPts).textContent = 'PSRO';
-}
-function playC() { clearInterval(cTimer); let n = 1; renderC(1);
-  cTimer = setInterval(() => { if (++n > 5) return clearInterval(cTimer); renderC(n); }, 900); }
-renderC(5);
-const playBC = () => { playB(); playC(); };
-whenVisible($('#vbc'), playBC);
+el('line', {x1: px(.70), y1: py(.95), x2: px(1.0), y2: py(.65), style: 'stroke:var(--muted);stroke-dasharray:4 4'}, cs);
+const cG = el('g', {}, cs);
+function renderC(n) { cG.innerHTML = ''; path(cG, NV, n, 'var(--naive)', 'mkN', 6); path(cG, PS.map((s, i) => [s, PH[i]]), n, 'var(--psro)', 'mkP', 6);
+  txt(cG, px(.62), py(.70), 'naive self-play', {class: 'b', style: 'fill:var(--atk-ink)'}); txt(cG, px(.955), py(.91), 'PSRO', {class: 'b', 'text-anchor': 'middle', style: 'fill:var(--psro)'}); }
+let cT = null;
+const playBC = () => {
+  bp.forEach(p => { p.style.transition = 'none'; p.style.strokeDasharray = 1; p.style.strokeDashoffset = 1; }); bs.getBoundingClientRect();
+  bp.forEach(p => { p.style.transition = 'stroke-dashoffset 2.4s ease-in-out'; p.style.strokeDashoffset = 0; });
+  clearInterval(cT); let n = 1; renderC(1); cT = setInterval(() => { if (++n > 5) return clearInterval(cT); renderC(n); }, 900);
+};
+renderC(5); whenVisible($('#fig3'), playBC);
+document.querySelectorAll('[data-replay]').forEach(b => b.addEventListener('click', () => ({a: playA, bc: playBC})[b.dataset.replay]()));
 
-document.querySelectorAll('[data-replay]').forEach(b => b.addEventListener('click', () =>
-  ({a: playA, bc: playBC})[b.dataset.replay]()));
-
-/* ---------------- findings: trend sketches, no numbers ---------------- */
-function bars(id, rows) {           // rows: [label, value, colour]; bars share one scale, values not printed
-  const svg = $('#' + id), max = Math.max(...rows.map(r => r[1])), h = 100 / rows.length;
-  rows.forEach(([lab, v, c], i) => {
-    const y = 10 + i * h;
-    el('text', {class: 'mlab', x: 0, y: y + h / 2 + 4}, svg).textContent = lab;
-    el('rect', {x: 118, y: y + h * 0.2, width: 4 + (v / max) * 134, height: h * 0.6, rx: 2, style: `fill:${c}`}, svg);
+/* ---- static charts ---- */
+function hbars(id, rows, {x0 = 118, w = 168, max, fmt = v => v, h = 34, legend} = {}) {   // rows: [label, [[value, colour], ...]]
+  const svg = $('#' + id); max = max || Math.max(...rows.flatMap(r => r[1].map(b => b[0])));
+  rows.forEach(([lab, bs], i) => { const y = 8 + i * h, n = bs.length, bh = n > 1 ? 12 : 17;
+    txt(svg, x0 - 8, y + h / 2 + 1, lab, {'text-anchor': 'end', class: 'ink'});
+    bs.forEach(([v, c], j) => { const yy = y + h / 2 - n * bh / 2 + j * bh - 2, ww = Math.max(v / max * w, v ? 1.5 : 0);
+      el('rect', {x: x0, y: yy, width: ww, height: bh - 2, style: `fill:${c}`}, svg); txt(svg, x0 + ww + 5, yy + bh - 4, fmt(v)); }); });
+  el('line', {class: 'axl', x1: x0, x2: x0, y1: 4, y2: 8 + rows.length * h}, svg);
+  (legend || []).forEach(([n, c], j) => { const y = 8 + rows.length * h + 16; el('rect', {x: x0 + j * 108, y: y - 9, width: 10, height: 10, style: `fill:${c}`}, svg); txt(svg, x0 + 15 + j * 108, y, n); });
+}
+const d3 = v => v.toFixed(3).replace(/^0/, '');
+hbars('f-judge', [['WildGuard', .062, .031], ['StrongREJECT', .054, .029], ['HarmBench', .049, .028], ['Gemini', .026, .016]].map(([n, a, b]) => [n, [[a, 'var(--fsp)'], [b, 'var(--def)']]]),
+  {fmt: d3, h: 38, legend: [['fictitious', 'var(--fsp)'], ['PSRO', 'var(--def)']]});
+hbars('f-models', [['Llama-3.1-8B', [[.356, 'var(--fsp)'], [.955, 'var(--def)']]], ['Qwen3-8B', [[.429, 'var(--fsp)'], [.983, 'var(--def)']]]], {fmt: d3, h: 62, max: 1, legend: [['before', 'var(--fsp)'], ['after PSRO', 'var(--def)']]});
+hbars('f-old', [['A1', .24], ['A2', .51], ['A3', .25], ['A4', 0], ['A5 (newest)', 0]].map(([n, v]) => [n, [[v, 'var(--atk)']]]), {fmt: v => v.toFixed(2), h: 32});
+hbars('f-cost', [['PSRO', [[1840, 'var(--def)']]], ['Fictitious', [[2960, 'var(--fsp)']]]], {fmt: v => v.toLocaleString('en-US'), h: 46});
+hbars('f-sub', [['A2', .33], ['A3', .33], ['A4', .023], ['A5', .10]].map(([n, v]) => [n, [[v, 'var(--atk)']]]), {fmt: v => (v * 100).toFixed(v < .1 ? 1 : 0) + '%', h: 34});
+function lines(id, series, lo, hi, ticks, dig, pad = 84) {
+  const svg = $('#' + id), x = i => 46 + i * (284 - pad) / 4 * 1.02, y = v => 178 - (v - lo) / (hi - lo) * 164;
+  ticks.forEach(v => { el('line', {class: 'gl', x1: 38, x2: x(4) + 6, y1: y(v), y2: y(v)}, svg); txt(svg, 32, y(v) + 4, (v < 0 ? '−' : '') + Math.abs(v).toFixed(dig), {'text-anchor': 'end'}); });
+  el('line', {class: 'axl', x1: 38, x2: x(4) + 6, y1: 178, y2: 178}, svg);
+  [1,2,3,4,5].forEach((g, i) => txt(svg, x(i), 193, g, {'text-anchor': 'middle'})); txt(svg, x(2), 209, 'generation', {'text-anchor': 'middle', class: 'ink'});
+  series.forEach(([n, c, v, tc]) => {
+    el('polyline', {points: v.map((u, i) => `${x(i)},${y(u)}`).join(' '), style: `fill:none;stroke:${c};stroke-width:2.2`}, svg);
+    v.forEach((u, i) => el('circle', {cx: x(i), cy: y(u), r: 3, style: `fill:${c}`}, svg));
+    if (n) txt(svg, x(4) + 10, y(v[4]) + 4, n, {class: 'b', style: `fill:${tc || c}`});
   });
 }
-function pairs(id, rows, cols, legend) {   // rows: [label, a, b]; two thin bars per row on one shared scale
-  const svg = $('#' + id), max = Math.max(...rows.flatMap(r => [r[1], r[2]])), h = 96 / rows.length;
-  rows.forEach(([lab, a, b], i) => {
-    const y = 6 + i * h, bh = Math.min(10, h * 0.32);
-    el('text', {class: 'mlab', x: 0, y: y + h / 2 + 4}, svg).textContent = lab;
-    [a, b].forEach((v, j) => el('rect', {x: 118, y: y + h / 2 - bh - 1 + j * (bh + 2), width: 3 + (v / max) * 135, height: bh, rx: 2, style: `fill:${cols[j]}`}, svg));
-  });
-  legend.forEach((n, j) => {
-    el('rect', {x: 118 + j * 86, y: 108, width: 8, height: 8, rx: 2, style: `fill:${cols[j]}`}, svg);
-    el('text', {class: 'mnote', x: 130 + j * 86, y: 116}, svg).textContent = n;
-  });
-}
-pairs('f-models', [['Llama 3.1 8B', .356, .955], ['Qwen3 8B', .429, .983]], ['var(--mid)', 'var(--def)'], ['before', 'after']);
-el('text', {class: 'mnote', x: 0, y: 116}, $('#f-models')).textContent = 'safety →';
-pairs('f-judge', [['Training judge', .062, .031], ['StrongREJECT', .054, .029], ['HarmBench', .049, .028], ['Gemini', .026, .016]],
-      ['var(--fsp)', 'var(--def)'], ['equal weights', 'ours']);
-el('text', {class: 'mnote', x: 0, y: 116}, $('#f-judge')).textContent = 'harmful answers →';
-bars('f-dan', [['Newest opponent only', .630, 'var(--naive)'], ['All opponents, equal', .130, 'var(--fsp)'], ['Ours', .053, 'var(--def)']]);
-el('text', {class: 'mnote', x: 118, y: 116}, $('#f-dan')).textContent = 'jailbreaks that work →';
-bars('f-normal', [['Starting model', .940, 'var(--mid)'], ['Ours', .944, 'var(--def)']]);
-el('text', {class: 'mnote', x: 118, y: 116}, $('#f-normal')).textContent = 'everyday questions answered →';
-bars('f-sub', [['Attacker 2', .33, 'var(--atk)'], ['Attacker 3', .33, 'var(--atk)'], ['Attacker 4', .023, 'var(--atk)'], ['Attacker 5', .10, 'var(--atk)']]);
-el('text', {class: 'mnote', x: 118, y: 116}, $('#f-sub')).textContent = 'swapped for easier requests →';
-{ // best attacker's payoff against each round's defender (paper Table 2b), lower = harder to beat
-  const svg = $('#f-unseen'), v = [-0.28, -0.59, -0.60, -0.68, -0.70], x = i => 14 + i * 48, y = u => 14 + (-0.25 - u) / 0.48 * 86;
-  el('line', {class: 'ax', x1: 6, y1: 108, x2: 216, y2: 108}, svg);
-  el('text', {class: 'mnote', x: 6, y: 120}, svg).textContent = 'round 1 → 5';
-  el('text', {class: 'mnote', x: 6, y: 8}, svg).textContent = '↑ how well the best attacker does';
-  el('polyline', {points: v.map((u, i) => `${x(i)},${y(u)}`).join(' '), style: 'fill:none;stroke:var(--atk);stroke-width:2.6;stroke-linejoin:round'}, svg);
-  v.forEach((u, i) => el('circle', {cx: x(i), cy: y(u), r: 3.5, style: 'fill:var(--atk)'}, svg));
-}
-bars('f-safe', [['Starting model', .356, 'var(--mid)'], ['Newest opponent only', .638, 'var(--naive)'],
-                ['All opponents, equal', .890, 'var(--fsp)'], ['Ours', .955, 'var(--def)']]);
-bars('f-old', [['Attacker 1', .24, 'var(--atk)'], ['Attacker 2', .51, 'var(--atk)'], ['Attacker 3', .25, 'var(--atk)'], ['Attacker 4', 0, 'var(--mid)'], ['Attacker 5 (newest)', 0, 'var(--mid)']]);
-el('text', {class: 'mnote', x: 118, y: 116}, $('#f-old')).textContent = 'how often picked →';
-{ // safety in rounds 1-2 (appendix table); warm start's round-2 point is its last checkpoint before collapse
-  const svg = $('#f-fresh'), x1 = 30, x2 = 140, y = v => 100 - (v - .70) / .30 * 86;
-  el('line', {class: 'ax', x1: 10, y1: 108, x2: 250, y2: 108}, svg);
-  el('text', {class: 'mnote', x: x1 - 14, y: 120}, svg).textContent = 'round 1';
-  el('text', {class: 'mnote', x: x2 - 14, y: 120}, svg).textContent = 'round 2';
-  el('text', {class: 'mnote', x: 10, y: 8}, svg).textContent = '↑ safety';
-  [['var(--psro)', .900, .965, 'Cold start (ours)'], ['var(--atk)', .933, .752, 'Warm start']].forEach(([c, a, b, n]) => {
-    el('polyline', {points: `${x1},${y(a)} ${x2},${y(b)}`, style: `fill:none;stroke:${c};stroke-width:2.6`}, svg);
-    [[x1, a], [x2, b]].forEach(([px, v]) => el('circle', {cx: px, cy: y(v), r: 3.5, style: `fill:${c}`}, svg));
-    el('text', {class: 'mlab', x: x2 + 9, y: y(b) + (b < .8 ? -4 : 4), style: `fill:${c};font-weight:600`}, svg).textContent = n;
-  });
-  el('line', {x1: x2, y1: y(.752) + 5, x2: x2, y2: 104, style: 'stroke:var(--atk);stroke-width:2;stroke-dasharray:3 3'}, svg);
-  el('text', {class: 'mlab', x: x2 - 4, y: 107, style: 'fill:var(--atk);font-weight:700'}, svg).textContent = '×';
-  el('text', {class: 'mnote', x: x2 + 9, y: 91, style: 'fill:var(--atk)'}, svg).textContent = 'then breaks:';
-  el('text', {class: 'mnote', x: x2 + 9, y: 102, style: 'fill:var(--atk)'}, svg).textContent = 'blank answers';
-}
-{ // total time over five rounds at PSRO's training rate: 1,840 vs 2,960 training steps (3.8 h per 172 steps); scoring ~13 min per new member
-  const svg = $('#f-cost'), W = 136 / 61.2, rows = [['Ours (PSRO)', 38.0, 2.2], ['Equal weights', 61.2, 0]];
-  rows.forEach(([lab, tr, sc], i) => {
-    const y = 18 + i * 42;
-    el('text', {class: 'mlab', x: 0, y: y + 13}, svg).textContent = lab;
-    el('rect', {x: 118, y, width: tr * W, height: 18, rx: 2, style: 'fill:var(--fsp)'}, svg);
-    if (sc) el('rect', {x: 118 + tr * W + 1, y, width: Math.max(3, sc * W), height: 18, rx: 1, style: 'fill:var(--psro)'}, svg);
-  });
-  [['var(--fsp)', 'training'], ['var(--psro)', 'scoring']].forEach(([c, n], j) => {
-    el('rect', {x: 118 + j * 62, y: 108, width: 8, height: 8, rx: 2, style: `fill:${c}`}, svg);
-    el('text', {class: 'mnote', x: 130 + j * 62, y: 116}, svg).textContent = n;
-  });
-  el('text', {class: 'mnote', x: 0, y: 116}, svg).textContent = 'total time →';
-}
-{ // safety + helpfulness per round, three methods, one shared scale
-  const svg = $('#f-round'), L = [
-    ['Ours', 'var(--psro)', [1.660, 1.701, 1.779, 1.755, 1.806]],
-    ['Equal weights', 'var(--fsp)', [1.707, 1.708, 1.615, 1.596, 1.698]],
-    ['Newest only', 'var(--naive)', [1.585, 1.531, 1.643, 1.546, 1.524]]];
-  const x = i => 12 + i * 42, y = v => 100 - (v - 1.50) / 0.33 * 88;
-  el('line', {class: 'ax', x1: 6, y1: 108, x2: 186, y2: 108}, svg);
-  el('text', {class: 'mnote', x: 6, y: 120}, svg).textContent = 'round 1 → 5';
-  L.forEach(([n, c, v]) => {
-    el('polyline', {points: v.map((u, i) => `${x(i)},${y(u)}`).join(' '), style: `fill:none;stroke:${c};stroke-width:2.4;stroke-linejoin:round`}, svg);
-    el('circle', {cx: x(4), cy: y(v[4]), r: 3.5, style: `fill:${c}`}, svg);
-    el('text', {class: 'mlab', x: x(4) + 8, y: y(v[4]) + 4, style: `fill:${c}`}, svg).textContent = n;
-  });
-  el('text', {class: 'mnote', x: 6, y: 8}, svg).textContent = '↑ safe and helpful overall';
-}
+lines('f-round', [['PSRO', 'var(--psro)', [1.660, 1.701, 1.779, 1.755, 1.806]], ['Fictitious', 'var(--fsp)', [1.707, 1.708, 1.615, 1.596, 1.698], 'var(--muted)'],
+  ['Naive', 'var(--naive)', [1.585, 1.531, 1.643, 1.546, 1.524], 'var(--atk-ink)']], 1.48, 1.84, [1.5, 1.6, 1.7, 1.8], 1);
+lines('f-unseen', [['', 'var(--atk)', [-.28, -.59, -.60, -.68, -.70]]], -.8, -.2, [-.8, -.6, -.4, -.2], 1, 30);
+{ const svg = $('#f-fresh'), x1 = 120, x2 = 290, y = v => 158 - (v - .7) / .3 * 144;
+  [.7, .8, .9, 1.0].forEach(v => { el('line', {class: v === .7 ? 'axl' : 'gl', x1: 70, x2: 340, y1: y(v), y2: y(v)}, svg); txt(svg, 62, y(v) + 4, v.toFixed(1), {'text-anchor': 'end'}); });
+  txt(svg, x1, 174, '1', {'text-anchor': 'middle'}); txt(svg, x2, 174, '2', {'text-anchor': 'middle'}); txt(svg, 205, 191, 'generation', {'text-anchor': 'middle', class: 'ink'});
+  txt(svg, 28, 86, 'Safety', {class: 'ink', 'text-anchor': 'middle', transform: 'rotate(-90 28 86)'});
+  [['var(--psro)', .900, .965, 'Cold start (PSRO)', 'var(--psro)'], ['var(--atk)', .933, .752, 'Warm start', 'var(--atk-ink)']].forEach(([c, a, b, n, t]) => {
+    el('line', {x1, y1: y(a), x2, y2: y(b), style: `stroke:${c};stroke-width:2.4`}, svg);
+    [[x1, a], [x2, b]].forEach(([p, v]) => el('circle', {cx: p, cy: y(v), r: 4, style: `fill:${c}`}, svg));
+    txt(svg, x2 + 56, y(b) + 4, n, {class: 'b', style: `fill:${t}`}); });
+  el('line', {x1: x2, y1: y(.752) + 5, x2, y2: 154, style: 'stroke:var(--atk);stroke-width:2;stroke-dasharray:3 3'}, svg);
+  txt(svg, x2 + 56, y(.752) + 19, 'then collapses: empty answers', {style: 'fill:var(--atk-ink)'}); }
 
 $('#copy').addEventListener('click', e => {
   navigator.clipboard.writeText($('#bib').textContent).then(() => { e.target.textContent = 'Copied'; })
-    .catch(() => { const r = document.createRange(); r.selectNodeContents($('#bib'));
-      const s = getSelection(); s.removeAllRanges(); s.addRange(r); e.target.textContent = 'Selected, press ⌘C'; });
+    .catch(() => { const r = document.createRange(); r.selectNodeContents($('#bib')); const s = getSelection(); s.removeAllRanges(); s.addRange(r); e.target.textContent = 'Selected, press ⌘C'; });
 });
 </script>
 
