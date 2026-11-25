@@ -53,6 +53,7 @@ sup { line-height: 0; font-size: .7em; }
 .tldr b { font-weight: 700; }
 
 section { display: grid; gap: 18px; padding-top: 40px; min-width: 0; }
+section.abstract { padding-block: 8px 30px; }
 section > * { min-width: 0; }
 .sub { display: grid; gap: 16px; padding-top: 14px; min-width: 0; }
 .abstract { max-width: 700px; margin: 0 auto; font-size: 1rem; }
@@ -134,9 +135,11 @@ footer { margin-top: 44px; padding-top: 18px; border-top: 1px solid var(--rule);
   <h1>Population&#8209;Based Self&#8209;Play for LLM Safety Training</h1>
   <p class="authors"><a href="https://wentsechen.github.io/">Wentse Chen</a><sup>1*</sup>, <a href="https://xudongwu-0.github.io/">Xudong Wu</a><sup>2*</sup>, <a href="https://ygan397.github.io/">Yu Gan</a><sup>3</sup>, <a href="https://ericglan.github.io/">Guangchen Lan</a><sup>4</sup>, Zhihan Zhang<sup>5</sup>, <a href="https://sites.google.com/cs.washington.edu/arvind">Arvind Krishnamurthy</a><sup>6</sup>, <a href="https://agentic-intelligence-lab.org/members/jiayu-chen.html">Jiayu Chen</a><sup>2†</sup>, <a href="https://www.cs.cmu.edu/~schneide/">Jeff Schneider</a><sup>1†</sup></p>
   <p class="affil"><span><sup>1</sup>Carnegie Mellon University</span> &ensp; <span><sup>2</sup>University of Hong Kong</span> &ensp; <span><sup>3</sup>Google</span> &ensp; <span><sup>4</sup>Purdue University</span> &ensp; <span><sup>5</sup>Amazon</span> &ensp; <span><sup>6</sup>University of Washington</span><br><sup>*</sup>Equal contribution &ensp; <sup>†</sup>Equal advising</p>
-  <nav class="links"><span>arXiv (coming soon)</span><a href="https://github.com/WentseChen/psro-llm-safety">Code</a><a href="#bibtex">BibTeX</a></nav>
+  <nav class="links"><span>arXiv (coming soon)</span><span>Code (coming soon)</span><a href="#bibtex">BibTeX</a></nav>
   <p class="tldr"><b>TL;DR</b>&ensp;Independently trained attackers find different jailbreaks, so a population is a stronger opponent than any single attacker. We train one defender against the whole population, and it is the safest among the self-play methods we compare.</p>
 </header>
+
+<section class="abstract"><div><h2>Abstract</h2><p>While self-play promises an unbounded supply of synthetic data for LLM post-training, standard single-policy methods quickly plateau. In attacker–defender self-play for safety training, we find that independently training the same attacker recipe produces diverse strategies. We measure this with pool@<i>k</i>, the fraction of prompts broken by at least one of <i>k</i> attackers: it reaches 3.4× the single-run value at <i>k</i> = 6 and continues to rise. This makes a population a stronger opponent than any individual attacker. We build on this finding with population-based self-play via Policy-Space Response Oracles: each new attacker or defender starts from the base model and trains against the Nash mixture of the entire opposing population. A single defender can thus learn to resist the population’s strategies while requiring only one model run at inference. To scale population payoff matrix evaluation at 8B parameters, we introduce a racing evaluation budget and a rollout cache. On standard safety benchmarks, our defender achieves 95.5% average safety, outperforming baseline self-play methods (at most 89.0%) at a moderate helpfulness cost.</p></div></section>
 
 <figure>
   <div class="frame" id="fig1">
@@ -153,10 +156,8 @@ footer { margin-top: 44px; padding-top: 18px; border-top: 1px solid var(--rule);
         <svg id="t-svg" viewBox="0 0 340 262" role="img" aria-label="Safety versus helpfulness of each PSRO defender generation"></svg></div>
     </div>
   </div>
-  <figcaption><b>Figure 1: A replay of training.</b> Each generation adds one attacker (row) and one defender (column). (a) The attacker's payoff for every matchup, and the Nash mixture over defenders (bars) that the next attacker trains against. A<sub>0</sub> and D<sub>0</sub> are the base model. (b) Each defender's score on held-out benchmarks, from one training seed; Figure 3b uses the same axes.</figcaption>
+  <figcaption><b>Figure 1: A replay of training.</b> Each generation adds one attacker (row) and one defender (column). (a) The attacker's payoff for every matchup, and the Nash mixture over defenders (bars) that the next attacker trains against. A<sub>0</sub> and D<sub>0</sub> are the base model. (b) Each defender's score on held-out benchmarks, on the same axes as Figure 3b.</figcaption>
 </figure>
-
-<section class="abstract"><div><h2>Abstract</h2><p>While self-play promises an unbounded supply of synthetic data for LLM post-training, standard single-policy methods quickly plateau. In attacker–defender self-play for safety training, we find that independently training the same attacker recipe produces diverse strategies. We measure this with pool@<i>k</i>, the fraction of prompts broken by at least one of <i>k</i> attackers: it reaches 3.4× the single-run value at <i>k</i> = 6 and continues to rise. This makes a population a stronger opponent than any individual attacker. We build on this finding with population-based self-play via Policy-Space Response Oracles: each new attacker or defender starts from the base model and trains against the Nash mixture of the entire opposing population. A single defender can thus learn to resist the population’s strategies while requiring only one model run at inference. To scale population payoff matrix evaluation at 8B parameters, we introduce a racing evaluation budget and a rollout cache. On standard safety benchmarks, our defender achieves 95.5% average safety, outperforming baseline self-play methods (at most 89.0%) at a moderate helpfulness cost.</p></div></section>
 
 <section>
   <h2><span class="n">1</span>Why train against a population</h2>
@@ -175,7 +176,7 @@ footer { margin-top: 44px; padding-top: 18px; border-top: 1px solid var(--rule);
           <div class="panel"><span class="ptitle">(b) pool@<i>k</i></span><svg id="a-curve" viewBox="0 0 300 190" role="img" aria-label="pool@k rises from 0.21 at k=1 to 0.715 at k=6"></svg></div>
         </div>
       </div>
-      <figcaption><b>Figure 2: A population covers more than any single run.</b> Counts are averaged over every set of <i>k</i> attackers. The dots illustrate those averages; which dots light up in a given step is not a record of one particular set.</figcaption>
+      <figcaption><b>Figure 2: A population covers more than any single run.</b> Counts are averaged over every set of <i>k</i> attackers.</figcaption>
     </figure>
     <p>Deploying <i>k</i> models would capture this coverage but costs <i>k</i> runs per request. We want one policy that has it, and so we make the population the opponent.</p>
   </div>
@@ -190,7 +191,7 @@ footer { margin-top: 44px; padding-top: 18px; border-top: 1px solid var(--rule);
           <div class="panel"><span class="ptitle">(b) Five defender generations</span><svg id="c-svg" viewBox="0 0 330 250" role="img" aria-label="naive self-play slides between safe and helpful; every PSRO generation lies above it"></svg></div>
         </div>
       </div>
-      <figcaption><b>Figure 3: Two limits of a single policy.</b> (a) Entropy over attack strategies and over tokens, relative to the first checkpoint. (b) Naive self-play and PSRO on the same axes, one seed each. Points on the dashed line have equal safety plus helpfulness; every PSRO generation lies above it and every naive generation below.</figcaption>
+      <figcaption><b>Figure 3: Two limits of a single policy.</b> (a) Entropy over attack strategies and over tokens, relative to the first checkpoint. (b) Naive self-play and PSRO on the same axes. Points on the dashed line have equal safety plus helpfulness; every PSRO generation lies above it and every naive generation below.</figcaption>
     </figure>
     <p class="question">Can a single policy trained against an equilibrium-weighted population capture that population's coverage, and what does it take to make this work for LLM self-play?</p>
   </div>
@@ -205,7 +206,7 @@ footer { margin-top: 44px; padding-top: 18px; border-top: 1px solid var(--rule);
   <p>Every new member is a fresh LoRA adapter on the base model, trained with REINFORCE. The matrix grows quadratically and each cell needs thousands of judged conversations, so we spend fewer episodes on matchups whose value is already clear (a racing budget) and never replay a finished one (a rollout cache).</p>
   <figure>
     <img src="img/psro_loop.gif" alt="Animated PSRO loop: population, payoff matrix, Nash mixture, and training a new member from the base model">
-    <figcaption><b>Figure 4: The PSRO loop,</b> shown for six iterations on our measured payoff matrix. Opponent draws are illustrative.</figcaption>
+    <figcaption><b>Figure 4: The PSRO loop,</b> shown for six iterations on our measured payoff matrix.</figcaption>
   </figure>
 </section>
 
@@ -232,16 +233,16 @@ footer { margin-top: 44px; padding-top: 18px; border-top: 1px solid var(--rule);
       <div class="panel"><span class="ptitle">(a) Harmful responses by judge ↓</span><svg id="f-judge" viewBox="0 0 330 182" role="img" aria-label="Harmful-response rate under four judges"></svg></div>
       <div class="panel"><span class="ptitle">(b) Safety before and after PSRO ↑</span><svg id="f-models" viewBox="0 0 330 156" role="img" aria-label="Safety before and after training for two model families"></svg></div>
     </div></div>
-    <figcaption><b>Figure 5: The result holds under other judges and for a second model.</b> (a) The same outputs under four judges; WildGuard supplies the training reward and the other three are unseen. (b) Llama is the fifth generation, averaged over two seeds; Qwen is one run at its fourth generation, where helpfulness falls from .966 to .740.</figcaption></figure>
+    <figcaption><b>Figure 5: The result holds under other judges and for a second model.</b> (a) The same outputs under four judges; WildGuard supplies the training reward and the other three are unseen. (b) Llama is the fifth generation; Qwen is the fourth.</figcaption></figure>
   </div>
   <div class="sub">
     <h3><span class="n">3.2</span>The defender improves as the population grows</h3>
-    <p>On held-out benchmarks, safety plus helpfulness rises over PSRO's generations, with a dip at the fourth, while fictitious self-play ends where it started and naive self-play goes back and forth (Figure 6a). Inside the game, the best payoff that any attacker of the final population achieves against PSRO's defender mixture falls at every iteration, including attackers trained later (Figure 6b).</p>
+    <p>On held-out benchmarks, safety plus helpfulness rises over PSRO's generations, while fictitious self-play ends where it started and naive self-play goes back and forth (Figure 6a). Inside the game, the best payoff that any attacker of the final population achieves against PSRO's defender mixture falls at every iteration, including attackers trained later (Figure 6b).</p>
     <figure><div class="frame"><div class="two">
       <div class="panel"><span class="ptitle">(a) Safety + helpfulness ↑</span><svg id="f-round" viewBox="0 0 330 210" role="img" aria-label="Safety plus helpfulness by generation for three methods"></svg></div>
       <div class="panel"><span class="ptitle">(b) Best attacker payoff ↓</span><svg id="f-unseen" viewBox="0 0 330 210" role="img" aria-label="Best attacker payoff by generation"></svg></div>
     </div></div>
-    <figcaption><b>Figure 6: Progress across generations.</b> (a) Held-out benchmarks, one seed per method. (b) Worst case of PSRO's Nash defender against attackers A<sub>0</sub> to A<sub>5</sub>.</figcaption></figure>
+    <figcaption><b>Figure 6: Progress across generations.</b> (a) Held-out benchmarks. (b) Worst case of PSRO's Nash defender against attackers A<sub>0</sub> to A<sub>5</sub>.</figcaption></figure>
   </div>
   <div class="sub">
     <h3><span class="n">3.3</span>Newer is not always stronger, so the choice of opponent matters</h3>
@@ -256,7 +257,7 @@ footer { margin-top: 44px; padding-top: 18px; border-top: 1px solid var(--rule);
     <h3><span class="n">3.4</span>Members need room to learn</h3>
     <p>PSRO starts every member from the base model. In a warm-start variant that continues the previous member instead, the second defender fell behind and then collapsed into empty answers (Figure 8). The likely cause is that reinforcement learning had already concentrated the first defender on a narrow set of behaviours, leaving its successor too little to explore.</p>
     <figure><div class="frame"><svg id="f-fresh" viewBox="0 0 520 200" style="max-width:520px;margin:0 auto" role="img" aria-label="Safety of cold-start and warm-start PSRO in generations one and two"></svg></div>
-    <figcaption><b>Figure 8: Cold start and warm start.</b> Safety of the first two defenders, one run each. The warm-start point at generation 2 is its last checkpoint before the collapse.</figcaption></figure>
+    <figcaption><b>Figure 8: Cold start and warm start.</b> Safety of the first two defenders. The warm-start point at generation 2 is its last checkpoint before the collapse.</figcaption></figure>
   </div>
   <div class="sub">
     <h3><span class="n">3.5</span>Strong attackers exploit the reward</h3>
@@ -271,7 +272,7 @@ footer { margin-top: 44px; padding-top: 18px; border-top: 1px solid var(--rule);
 
 <section>
   <h2><span class="n">4</span>Limitations</h2>
-  <p>PSRO gives up some helpfulness. The loss is almost entirely on benign prompts worded to look adversarial; compliance on ordinary safe prompts is unchanged. Every self-play method also costs more than a defence that trains one model once. Table 1 averages two seeds for PSRO, fictitious self-play and MAGIC, but the per-generation curves show one seed, and topic substitution remains in the reported run.</p>
+  <p>Every self-play method trains both an attacker and a defender over many iterations, and so costs more than a defence that trains one model once. Topic substitution is not fully prevented in the reported run.</p>
 </section>
 
 <section>
